@@ -19,6 +19,7 @@ jobs:
       - name: Add web platform files if missing
         run: |
           flutter create --platforms=web --project-name foap_web --org com.connect.to.friends .
+          rm -rf test
 
       - run: flutter pub get
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
