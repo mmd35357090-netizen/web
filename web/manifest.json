@@ -1,0 +1,12 @@
+{
+  "name": "Facehub",
+  "short_name": "Facehub",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#4169E1",
+  "description": "Facehub",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": []
+}
