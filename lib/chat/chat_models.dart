@@ -32,8 +32,10 @@ class ChatMsg {
   String senderName = '';
   int type = 1;
   String text = '';
+  String media = ''; // image url (photo) or video url
   int createdAt = 0;
   bool sending = false;
+  bool deleted = false;
 
   ChatMsg();
 
@@ -52,6 +54,14 @@ class ChatMsg {
     final encrypted = _i(j['is_encrypted'] ?? j['isEncrypted']) == 1;
     final body = encrypted ? chatDecrypt(raw) : raw;
     m.text = _describe(m.type, body);
+    if (m.type == 2 || m.type == 3 || m.type == 5) {
+      try {
+        final c = jsonDecode(body);
+        if (c is Map) {
+          m.media = ((m.type == 3 ? c['video'] : c['image']) ?? '').toString();
+        }
+      } catch (_) {}
+    }
     return m;
   }
 

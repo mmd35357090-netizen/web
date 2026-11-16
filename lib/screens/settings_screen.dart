@@ -7,6 +7,7 @@ import 'blocked_support_screens.dart';
 import 'edit_profile_screen.dart';
 import 'hashtag_screen.dart';
 import 'login_screen.dart';
+import 'settings_extra_screens.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -78,6 +79,24 @@ class SettingsScreen extends StatelessWidget {
               leading: const Icon(Icons.lock_outline_rounded),
               title: const Text('Change password'),
               onTap: () => showDialog(context: context, builder: (_) => const _PasswordDialog()),
+            ),
+            ListTile(
+              leading: const Icon(Icons.privacy_tip_outlined),
+              title: const Text('Privacy & notifications'),
+              onTap: () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const PrivacyScreen())),
+            ),
+            ListTile(
+              leading: const Icon(Icons.person_add_alt_outlined),
+              title: const Text('Follow requests'),
+              onTap: () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const FollowRequestsScreen())),
+            ),
+            ListTile(
+              leading: const Icon(Icons.help_outline_rounded),
+              title: const Text('FAQ'),
+              onTap: () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const FaqScreen())),
             ),
             ListTile(
               leading: const Icon(Icons.block_rounded),

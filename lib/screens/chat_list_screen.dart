@@ -7,6 +7,7 @@ import '../models.dart';
 import '../session.dart';
 import '../widgets.dart';
 import 'chat_screen.dart';
+import 'new_group_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -59,12 +60,22 @@ class _ChatListScreenState extends State<ChatListScreen> {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 640),
         child: Column(children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Messages', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
+            child: Row(children: [
+              const Expanded(
+                child: Text('Messages', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+              ),
+              TextButton.icon(
+                onPressed: () async {
+                  await Navigator.of(context)
+                      .push(MaterialPageRoute(builder: (_) => const NewGroupScreen()));
+                  _load(silent: true);
+                },
+                icon: const Icon(Icons.group_add_outlined),
+                label: const Text('New group'),
+              ),
+            ]),
           ),
           Expanded(
             child: _rooms.isEmpty
@@ -87,7 +98,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                               style: const TextStyle(fontSize: 12, color: Colors.black45)),
                           onTap: () async {
                             await Navigator.of(context).push(MaterialPageRoute(
-                                builder: (_) => ChatScreen(roomId: r.id, title: r.displayName, user: r.avatarUser)));
+                                builder: (_) => ChatScreen(roomId: r.id, title: r.displayName, user: r.avatarUser, isGroup: r.isGroup)));
                             _load(silent: true);
                           },
                         );

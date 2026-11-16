@@ -6,6 +6,7 @@ import 'feed_screen.dart';
 import 'user_list.dart';
 import 'chat_list_screen.dart';
 import 'settings_screen.dart';
+import 'highlights_bar.dart';
 
 /// userId == null -> the logged in user's own profile
 class ProfileScreen extends StatefulWidget {
@@ -86,6 +87,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(appBar: AppBar(title: Text(_user?.displayName ?? '')), body: body);
   }
 
+  Future<void> _userAction(String v, AppUser u) async {
+    if (v == 'block') {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (c) => AlertDialog(
+          title: Text('Block ${u.displayName}?'),
+          content: const Text('They will no longer be able to find you or message you.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Block')),
+          ],
+        ),
+      );
+      if (ok != true || !mounted) return;
+      final r = await Api.post('blocked-users', {'blocked_user_id': '${u.id}'});
+      if (!mounted) return;
+      if (r.ok) {
+        toast(context, 'User blocked');
+        Navigator.of(context).maybePop();
+      } else {
+        toast(context, r.message.isEmpty ? 'Could not block' : r.message);
+      }
+    } else {
+      final r = await Api.post('users/report-user', {'report_to_user_id': '${u.id}'});
+      if (mounted) toast(context, r.ok ? 'Thanks, we will review this user' : 'Could not report');
+    }
+  }
+
   void _openList(AppUser u, bool followers) {
     Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => FollowListScreen(userId: u.id, followers: followers)));
@@ -97,6 +126,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 640),
         child: Column(children: [
+          if (!_own)
+            Align(
+              alignment: Alignment.centerRight,
+              child: PopupMenuButton<String>(
+                onSelected: (v) => _userAction(v, u),
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'report', child: Text('Report user')),
+                  PopupMenuItem(value: 'block', child: Text('Block user')),
+                ],
+              ),
+            ),
           if (_own)
             Align(
               alignment: Alignment.centerRight,
@@ -158,6 +198,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ]),
           ),
+          HighlightsBar(key: ValueKey(u.id), userId: u.id, own: _own),
           const Divider(height: 1),
           Expanded(child: PostList(query: 'user_id=${u.id}')),
         ]),

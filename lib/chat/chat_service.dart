@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:socket_io_client/socket_io_client.dart' as io;
+import '../api.dart';
 import '../config.dart';
 import '../session.dart';
 import 'chat_models.dart';
@@ -14,11 +15,13 @@ class ChatService {
   final _confirms = StreamController<Map<String, dynamic>>.broadcast();
   final _typing = StreamController<Map<String, dynamic>>.broadcast();
   final _online = StreamController<Map<String, dynamic>>.broadcast();
+  final _deletes = StreamController<Map<String, dynamic>>.broadcast();
   final List<List<dynamic>> _queue = [];
 
   Stream<ChatMsg> get messages => _messages.stream;
   Stream<Map<String, dynamic>> get confirms => _confirms.stream;
   Stream<Map<String, dynamic>> get typing => _typing.stream;
+  Stream<Map<String, dynamic>> get deletes => _deletes.stream;
   Stream<Map<String, dynamic>> get online => _online.stream;
   bool get connected => _socket?.connected == true;
 
@@ -34,7 +37,7 @@ class ChatService {
     );
     _socket = s;
     s.on('connect', (_) {
-      s.emit('login', {'userId': me.id, 'username': me.username});
+      s.emit('login', {'userId': me.id, 'username': me.username, 'authKey': Api.token ?? ''});
       for (final q in _queue) {
         s.emit(q[0] as String, q[1]);
       }
@@ -44,6 +47,7 @@ class ChatService {
       if (d is Map) _messages.add(ChatMsg.fromJson(d));
     });
     s.on('updateMessageCurrentStatus', (d) => _confirms.add(_map(d)));
+    s.on('deleteMessage', (d) => _deletes.add(_map(d)));
     s.on('typing', (d) => _typing.add(_map(d)));
     s.on('userOnline', (d) => _online.add({..._map(d), 'online': true}));
     s.on('userOffline', (d) => _online.add({..._map(d), 'online': false}));
