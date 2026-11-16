@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../api.dart';
 import '../models.dart';
 import 'post_card.dart';
+import 'explore_hub.dart';
+import 'search_screen.dart';
+import 'story_viewer.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -22,9 +25,26 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Column(children: [
+      const StoriesBar(),
       Material(
         color: Colors.white,
-        child: TabBar(controller: _tabs, tabs: const [Tab(text: 'For you'), Tab(text: 'Following')]),
+        child: Row(children: [
+          Expanded(
+            child: TabBar(controller: _tabs, tabs: const [Tab(text: 'For you'), Tab(text: 'Following')]),
+          ),
+          IconButton(
+            tooltip: 'Explore',
+            icon: const Icon(Icons.apps_rounded),
+            onPressed: () => Navigator.of(context)
+                .push(MaterialPageRoute(builder: (_) => const ExploreHub())),
+          ),
+          IconButton(
+            tooltip: 'Search',
+            icon: const Icon(Icons.search_rounded),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => Scaffold(appBar: AppBar(title: const Text('Search')), body: const SearchScreen()))),
+          ),
+        ]),
       ),
       Expanded(
         child: TabBarView(controller: _tabs, children: const [

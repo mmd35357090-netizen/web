@@ -3,6 +3,9 @@ import '../api.dart';
 import '../models.dart';
 import '../widgets.dart';
 import 'feed_screen.dart';
+import 'user_list.dart';
+import 'chat_list_screen.dart';
+import 'settings_screen.dart';
 
 /// userId == null -> the logged in user's own profile
 class ProfileScreen extends StatefulWidget {
@@ -62,11 +65,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _busy = false;
   }
 
-  Widget _stat(String label, int v) => Expanded(
-        child: Column(children: [
+  Widget _stat(String label, int v, {VoidCallback? onTap}) => Expanded(
+        child: InkWell(
+          onTap: onTap,
+          child: Column(children: [
           Text('$v', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
           Text(label, style: const TextStyle(color: Colors.black54, fontSize: 12)),
         ]),
+        ),
       );
 
   @override
@@ -80,14 +86,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(appBar: AppBar(title: Text(_user?.displayName ?? '')), body: body);
   }
 
+  void _openList(AppUser u, bool followers) {
+    Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => FollowListScreen(userId: u.id, followers: followers)));
+  }
+
   Widget _content(AppUser u) {
     return Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 640),
         child: Column(children: [
+          if (_own)
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                tooltip: 'Settings',
+                icon: const Icon(Icons.settings_outlined),
+                onPressed: () async {
+                  await Navigator.of(context)
+                      .push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
+                  if (mounted) _load();
+                },
+              ),
+            ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
             child: Column(children: [
               Avatar(u, size: 88),
               const SizedBox(height: 10),
@@ -109,17 +133,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 14),
               Row(children: [
                 _stat('Posts', u.posts),
-                _stat('Followers', u.followers),
-                _stat('Following', u.following),
+                _stat('Followers', u.followers, onTap: () => _openList(u, true)),
+                _stat('Following', u.following, onTap: () => _openList(u, false)),
               ]),
               if (!_own) ...[
                 const SizedBox(height: 12),
-                SizedBox(
-                  width: 200,
-                  child: u.isFollowing
-                      ? OutlinedButton(onPressed: _toggleFollow, child: const Text('Following'))
-                      : FilledButton(onPressed: _toggleFollow, child: const Text('Follow')),
-                ),
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  SizedBox(
+                    width: 140,
+                    child: u.isFollowing
+                        ? OutlinedButton(onPressed: _toggleFollow, child: const Text('Following'))
+                        : FilledButton(onPressed: _toggleFollow, child: const Text('Follow')),
+                  ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 140,
+                    child: OutlinedButton.icon(
+                      onPressed: () => openChatWith(context, u),
+                      icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                      label: const Text('Message'),
+                    ),
+                  ),
+                ]),
               ],
             ]),
           ),

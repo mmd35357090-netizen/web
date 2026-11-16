@@ -75,6 +75,7 @@ class AppPost {
   int views = 0;
   bool isLiked = false;
   bool commentsEnabled = true;
+  bool isSaved = false;
   int contentType = 1; // 1 text, 2 media, others are special posts
   int createdAt = 0;
   String? shareLink;
@@ -94,6 +95,7 @@ class AppPost {
     p.views = _i(j['total_view']);
     p.isLiked = _i(j['is_like']) == 1;
     p.commentsEnabled = j['is_comment_enable'] == null || _i(j['is_comment_enable']) == 1;
+    p.isSaved = _i(j['isFavorite']) == 1;
     p.contentType = _i(j['post_content_type'], 1);
     p.createdAt = _i(j['created_at']);
     p.shareLink = j['share_link']?.toString();
@@ -123,6 +125,78 @@ class AppComment {
     c.user = AppUser.fromJson(j['user']);
     c.createdAt = _i(j['created_at']);
     return c;
+  }
+}
+
+class AppNotification {
+  int id = 0;
+  String title = '';
+  String message = '';
+  int type = 0;
+  int createdAt = 0;
+  bool read = false;
+  AppUser? by;
+  int refId = 0;
+
+  AppNotification();
+
+  factory AppNotification.fromJson(dynamic j) {
+    final n = AppNotification();
+    if (j is! Map) return n;
+    n.id = _i(j['id']);
+    n.title = _s(j['title']);
+    n.message = _s(j['message']);
+    n.type = _i(j['type']);
+    n.createdAt = _i(j['created_at']);
+    n.read = _i(j['read_status']) == 1;
+    n.by = j['createdByUser'] == null ? null : AppUser.fromJson(j['createdByUser']);
+    final ref = j['refrenceDetails'];
+    if (ref is Map) n.refId = _i(ref['id']);
+    return n;
+  }
+}
+
+class StoryItem {
+  int id = 0;
+  String? image;
+  String? video;
+  String text = '';
+  String? bgColor;
+  int createdAt = 0;
+
+  StoryItem();
+
+  factory StoryItem.fromJson(dynamic j) {
+    final s = StoryItem();
+    if (j is! Map) return s;
+    s.id = _i(j['id']);
+    s.image = j['imageUrl']?.toString();
+    s.video = j['videoUrl']?.toString();
+    s.text = _s(j['description']);
+    s.bgColor = j['background_color']?.toString();
+    s.createdAt = _i(j['created_at']);
+    return s;
+  }
+
+  bool get isVideo => video != null && video!.isNotEmpty;
+}
+
+class UserStories {
+  AppUser user = AppUser();
+  List<StoryItem> items = [];
+
+  UserStories();
+
+  factory UserStories.fromJson(dynamic j) {
+    final u = UserStories();
+    if (j is! Map) return u;
+    u.user.id = _i(j['id']);
+    u.user.name = _s(j['name']);
+    u.user.username = _s(j['username']);
+    u.user.picture = j['picture']?.toString();
+    final l = j['userStory'];
+    if (l is List) u.items = l.map((e) => StoryItem.fromJson(e)).toList();
+    return u;
   }
 }
 

@@ -11,6 +11,10 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.6
   http: ^1.2.0
+  http_parser: ^4.0.2
+  socket_io_client: ^3.0.2
+  aescryptojs: ^1.0.0
+  file_picker: ^8.1.2
   shared_preferences: ^2.2.2
   video_player: ^2.8.2
   intl: ^0.19.0

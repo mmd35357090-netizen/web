@@ -3,7 +3,9 @@ import '../api.dart';
 import '../models.dart';
 import '../widgets.dart';
 import 'comments_sheet.dart';
+import 'hashtag_screen.dart';
 import 'profile_screen.dart';
+import '../session.dart';
 
 class PostCard extends StatefulWidget {
   final AppPost post;
@@ -37,6 +39,41 @@ class _PostCardState extends State<PostCard> {
     _busy = false;
   }
 
+  bool _hidden = false;
+
+  Future<void> _menu(String v) async {
+    if (v == 'save') {
+      final was = p.isSaved;
+      setState(() => p.isSaved = !was);
+      final r = await Api.post(was ? 'favorites/remove-favorite' : 'favorites/add-favorite',
+          {'reference_id': p.id.toString(), 'type': '3'});
+      if (!r.ok && mounted) setState(() => p.isSaved = was);
+      if (mounted) toast(context, r.ok ? (was ? 'Removed from saved' : 'Saved') : 'Could not update');
+    } else if (v == 'report') {
+      final r = await Api.post('posts/report-post', {'post_id': p.id.toString()});
+      if (mounted) toast(context, r.ok ? 'Thanks, we will review this post' : 'Could not report');
+    } else if (v == 'delete') {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (c) => AlertDialog(
+          title: const Text('Delete this post?'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Delete')),
+          ],
+        ),
+      );
+      if (ok != true) return;
+      final r = await Api.delete('posts/${p.id}');
+      if (!mounted) return;
+      if (r.ok) {
+        setState(() => _hidden = true);
+      } else {
+        toast(context, r.message.isEmpty ? 'Could not delete' : r.message);
+      }
+    }
+  }
+
   void _openUser() {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProfileScreen(userId: p.user.id)));
   }
@@ -56,7 +93,7 @@ class _PostCardState extends State<PostCard> {
     final first = p.media.first;
     double ratio = 1;
     if (first.width > 0 && first.height > 0) {
-      ratio = (first.width / first.height).clamp(0.8, 1.6);
+      ratio = (first.width / first.height).clamp(0.8, 1.6).toDouble();
     }
     return AspectRatio(
       aspectRatio: ratio,
@@ -107,7 +144,9 @@ class _PostCardState extends State<PostCard> {
 
   @override
   Widget build(BuildContext context) {
+    if (_hidden) return const SizedBox.shrink();
     final cs = Theme.of(context).colorScheme;
+    final mine = Session.me != null && Session.me!.id == p.user.id;
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       elevation: 0,
@@ -134,11 +173,33 @@ class _PostCardState extends State<PostCard> {
                 ),
             ]),
             subtitle: Text(timeAgo(p.createdAt)),
+            trailing: PopupMenuButton<String>(
+              onSelected: _menu,
+              itemBuilder: (c) => [
+                PopupMenuItem(value: 'save', child: Text(p.isSaved ? 'Remove from saved' : 'Save')),
+                if (mine)
+                  const PopupMenuItem(value: 'delete', child: Text('Delete'))
+                else
+                  const PopupMenuItem(value: 'report', child: Text('Report')),
+              ],
+            ),
           ),
           if (p.title.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
               child: SelectableText(p.title, style: const TextStyle(fontSize: 15, height: 1.35)),
+            ),
+          if (p.tags.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Wrap(spacing: 8, children: [
+                for (final t in p.tags)
+                  InkWell(
+                    onTap: () => Navigator.of(context)
+                        .push(MaterialPageRoute(builder: (_) => HashtagScreen(tag: t))),
+                    child: Text(t, style: TextStyle(color: cs.primary, fontWeight: FontWeight.w600)),
+                  ),
+              ]),
             ),
           _mediaView(),
           Padding(

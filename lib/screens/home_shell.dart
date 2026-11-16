@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import '../api.dart';
 import '../config.dart';
+import 'create_post_screen.dart';
 import 'feed_screen.dart';
+import 'notifications_screen.dart';
+import 'chat_list_screen.dart';
+import '../chat/chat_service.dart';
+import '../session.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
 import 'reels_screen.dart';
@@ -16,9 +21,20 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    ChatService.instance.connect();
+    Session.load().then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
   static const _items = <_Nav>[
     _Nav('Home', Icons.home_outlined, Icons.home_rounded),
     _Nav('Reels', Icons.play_circle_outline_rounded, Icons.play_circle_rounded),
+    _Nav('Chat', Icons.chat_bubble_outline_rounded, Icons.chat_bubble_rounded),
+    _Nav('Alerts', Icons.notifications_none_rounded, Icons.notifications_rounded),
     _Nav('Profile', Icons.person_outline_rounded, Icons.person_rounded),
   ];
 
@@ -28,13 +44,31 @@ class _HomeShellState extends State<HomeShell> {
         return const FeedScreen();
       case 1:
         return _index == 1 ? const ReelsScreen() : const SizedBox.shrink();
+      case 2:
+        return _index == 2 ? const ChatListScreen() : const SizedBox.shrink();
+      case 3:
+        return _index == 3 ? const NotificationsScreen() : const SizedBox.shrink();
       default:
         return const ProfileScreen();
     }
   }
 
+  void _create() {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CreatePostScreen()));
+  }
+
+  Widget? _fab() => (_index == 1 || _index == 2)
+      ? null
+      : FloatingActionButton(
+          onPressed: _create,
+          tooltip: 'New post',
+          child: const Icon(Icons.add_rounded),
+        );
+
   Future<void> _logout() async {
     await Api.post('users/logout', {});
+    ChatService.instance.disconnect();
+    Session.clear();
     await Api.saveToken(null);
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
@@ -53,6 +87,7 @@ class _HomeShellState extends State<HomeShell> {
 
     if (wide) {
       return Scaffold(
+        floatingActionButton: _fab(),
         body: Row(
           children: [
             NavigationRail(
@@ -92,6 +127,7 @@ class _HomeShellState extends State<HomeShell> {
     }
 
     return Scaffold(
+      floatingActionButton: _fab(),
       body: SafeArea(bottom: false, child: body),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,

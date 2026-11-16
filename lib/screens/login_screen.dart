@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../api.dart';
 import '../config.dart';
 import '../widgets.dart';
+import 'auth_screens.dart';
 import 'home_shell.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -118,9 +119,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text('New here? Create your account in the mobile app.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.black54, fontSize: 13)),
+                    TextButton(
+                      onPressed: () => Navigator.of(context)
+                          .push(MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
+                      child: const Text('Forgot password?'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context)
+                          .push(MaterialPageRoute(builder: (_) => const RegisterScreen())),
+                      child: const Text('New here? Create an account'),
+                    ),
                   ],
                 ),
               ),

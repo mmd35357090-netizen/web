@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'config.dart';
 
@@ -116,6 +118,45 @@ class Api {
       return _parse(r);
     } catch (_) {
       return ApiResult(false, 0, null, 'Network error. Please check your connection.');
+    }
+  }
+
+  /// uploads one file (type 7 = post media) and returns {file, fileUrl} or an error message
+  static Future<ApiResult> upload(String name, Uint8List bytes, String mime, {String type = '7'}) async {
+    try {
+      final req = http.MultipartRequest('POST', _uri('file-uploads/upload-file'));
+      if (token != null) req.headers['Authorization'] = 'Bearer $token';
+      req.fields['type'] = type;
+      req.files.add(http.MultipartFile.fromBytes('mediaFile', bytes,
+          filename: name, contentType: MediaType.parse(mime)));
+      final streamed = await req.send();
+      final r = await http.Response.fromStream(streamed);
+      return _parse(r);
+    } catch (_) {
+      return ApiResult(false, 0, null, 'Upload failed. Please check your connection.');
+    }
+  }
+
+  static Future<ApiResult> delete(String path) async {
+    try {
+      final r = await http.delete(_uri(path), headers: _headers(json: true));
+      return _parse(r);
+    } catch (_) {
+      return ApiResult(false, 0, null, 'Network error. Please check your connection.');
+    }
+  }
+
+  /// profile photo (field name imageFile)
+  static Future<ApiResult> uploadProfileImage(String name, Uint8List bytes, String mime) async {
+    try {
+      final req = http.MultipartRequest('POST', _uri('users/update-profile-image'));
+      if (token != null) req.headers['Authorization'] = 'Bearer $token';
+      req.files.add(http.MultipartFile.fromBytes('imageFile', bytes,
+          filename: name, contentType: MediaType.parse(mime)));
+      final streamed = await req.send();
+      return _parse(await http.Response.fromStream(streamed));
+    } catch (_) {
+      return ApiResult(false, 0, null, 'Upload failed. Please check your connection.');
     }
   }
 }
