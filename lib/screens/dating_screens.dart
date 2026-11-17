@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../app_only.dart';
 import 'package:intl/intl.dart';
 import '../api.dart';
 import '../models.dart';
@@ -372,8 +373,7 @@ class _DatingSettingsScreenState extends State<DatingSettingsScreen> {
                   const SizedBox(height: 16),
                   FilledButton(onPressed: _busy ? null : _save, child: Text(_busy ? 'Saving...' : 'Save')),
                   const SizedBox(height: 8),
-                  const Text('Interests, languages and other filters can be set in the mobile app.',
-                      style: TextStyle(color: Colors.black45, fontSize: 12)),
+                  const AppOnlyNote('More filters (interests, languages, height) are in the mobile app.'),
                 ]),
               ),
             ),

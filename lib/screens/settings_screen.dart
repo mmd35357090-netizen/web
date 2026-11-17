@@ -9,6 +9,7 @@ import 'hashtag_screen.dart';
 import 'login_screen.dart';
 import 'gifts_subscriptions_screens.dart';
 import 'settings_extra_screens.dart';
+import 'wallet_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -98,6 +99,12 @@ class SettingsScreen extends StatelessWidget {
               title: const Text('FAQ'),
               onTap: () => Navigator.of(context)
                   .push(MaterialPageRoute(builder: (_) => const FaqScreen())),
+            ),
+            ListTile(
+              leading: const Icon(Icons.account_balance_wallet_outlined),
+              title: const Text('Wallet & earnings'),
+              onTap: () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const WalletScreen())),
             ),
             ListTile(
               leading: const Icon(Icons.card_giftcard_rounded),

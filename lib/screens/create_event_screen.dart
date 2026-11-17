@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../app_only.dart';
 import 'package:intl/intl.dart';
 import '../api.dart';
 import '../widgets.dart';
@@ -183,8 +184,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             const SizedBox(height: 12),
             TextField(controller: _disclaimer, maxLines: 2, decoration: const InputDecoration(labelText: 'Disclaimer (optional)')),
             const SizedBox(height: 8),
-            const Text('This creates a free event. For paid tickets, use the mobile app.',
-                style: TextStyle(color: Colors.black45, fontSize: 12)),
+            const AppOnlyNote('Here you can create free events. Paid tickets are set up in the mobile app.'),
             const SizedBox(height: 12),
             FilledButton(onPressed: _busy ? null : _create, child: Text(_busy ? 'Please wait...' : 'Create event')),
           ]),

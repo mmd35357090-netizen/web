@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../app_only.dart';
 import 'paged_list.dart';
 
 class JobsScreen extends StatefulWidget {
@@ -93,7 +94,7 @@ class JobDetailScreen extends StatelessWidget {
             const SizedBox(height: 8),
             SelectableText(str(job['description'])),
             const SizedBox(height: 16),
-            const Text('To apply, use the mobile app.', style: TextStyle(color: Colors.black45, fontSize: 12)),
+            const AppOnlyNote('Applying for a job works in the mobile app.'),
           ]),
         ),
       ),

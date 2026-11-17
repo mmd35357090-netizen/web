@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../app_only.dart';
 import 'package:intl/intl.dart';
 import '../api.dart';
 import '../widgets.dart';
@@ -244,8 +245,7 @@ class EventDetailScreen extends StatelessWidget {
                       trailing: Text(t['price'] ?? '', style: const TextStyle(fontWeight: FontWeight.w700)),
                     ),
                 const SizedBox(height: 10),
-                const Text('Tickets can be booked in the mobile app.',
-                    style: TextStyle(color: Colors.black45, fontSize: 12)),
+                const AppOnlyNote('Booking tickets works in the mobile app.'),
                 if (e.disclaimer.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Text(e.disclaimer, style: const TextStyle(color: Colors.black45, fontSize: 12)),

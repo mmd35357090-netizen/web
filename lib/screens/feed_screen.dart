@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../api.dart';
+import '../config.dart';
 import '../models.dart';
 import 'post_card.dart';
 import 'explore_hub.dart';
 import 'search_screen.dart';
 import 'story_viewer.dart';
+import 'sponsored.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -16,41 +18,98 @@ class FeedScreen extends StatefulWidget {
 class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateMixin {
   late final TabController _tabs = TabController(length: 2, vsync: this);
 
+  bool _showHeader = true;
+
   @override
   void dispose() {
     _tabs.dispose();
     super.dispose();
   }
 
+  // Facebook-style: the header slides away when you scroll down and comes back when you scroll up.
+  bool _onScroll(ScrollNotification n) {
+    if (n.metrics.axis != Axis.vertical) return false;
+    if (n is ScrollUpdateNotification) {
+      final d = n.scrollDelta ?? 0;
+      final top = n.metrics.pixels <= 40;
+      final want = top || d < -6 ? true : (d > 6 ? false : _showHeader);
+      if (want != _showHeader) setState(() => _showHeader = want);
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(children: [
-      const StoriesBar(),
-      Material(
-        color: Colors.white,
-        child: Row(children: [
+    final cs = Theme.of(context).colorScheme;
+    final wide = MediaQuery.of(context).size.width >= 900;
+    final show = wide || _showHeader;
+    final header = Material(
+      color: Colors.white,
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        if (!wide)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 4, 4, 0),
+            child: Row(children: [
+              Expanded(
+                child: Text(AppConfig.appName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: cs.primary)),
+              ),
+              IconButton(
+                tooltip: 'Explore',
+                icon: const Icon(Icons.apps_rounded),
+                onPressed: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const ExploreHub())),
+              ),
+              IconButton(
+                tooltip: 'Search',
+                icon: const Icon(Icons.search_rounded),
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => Scaffold(appBar: AppBar(title: const Text('Search')), body: const SearchScreen()))),
+              ),
+            ]),
+          ),
+        Row(children: [
           Expanded(
             child: TabBar(controller: _tabs, tabs: const [Tab(text: 'For you'), Tab(text: 'Following')]),
           ),
-          IconButton(
-            tooltip: 'Explore',
-            icon: const Icon(Icons.apps_rounded),
-            onPressed: () => Navigator.of(context)
-                .push(MaterialPageRoute(builder: (_) => const ExploreHub())),
-          ),
-          IconButton(
-            tooltip: 'Search',
-            icon: const Icon(Icons.search_rounded),
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => Scaffold(appBar: AppBar(title: const Text('Search')), body: const SearchScreen()))),
-          ),
+          if (wide) ...[
+            IconButton(
+              tooltip: 'Explore',
+              icon: const Icon(Icons.apps_rounded),
+              onPressed: () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const ExploreHub())),
+            ),
+            IconButton(
+              tooltip: 'Search',
+              icon: const Icon(Icons.search_rounded),
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => Scaffold(appBar: AppBar(title: const Text('Search')), body: const SearchScreen()))),
+            ),
+          ],
         ]),
+        const StoriesBar(),
+      ]),
+    );
+    return Column(children: [
+      ClipRect(
+        child: AnimatedAlign(
+          alignment: Alignment.topCenter,
+          heightFactor: show ? 1 : 0,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          child: header,
+        ),
       ),
       Expanded(
-        child: TabBarView(controller: _tabs, children: const [
-          PostList(query: 'is_recent=1'),
-          PostList(query: 'is_following_user_post=1'),
-        ]),
+        child: NotificationListener<ScrollNotification>(
+          onNotification: _onScroll,
+          child: TabBarView(controller: _tabs, children: const [
+            PostList(query: 'is_recent=1'),
+            PostList(query: 'is_following_user_post=1'),
+          ]),
+        ),
       ),
     ]);
   }
@@ -78,9 +137,14 @@ class _PostListState extends State<PostList> with AutomaticKeepAliveClientMixin 
   @override
   bool get wantKeepAlive => true;
 
+  List<SponsoredAd> _ads = [];
+
   @override
   void initState() {
     super.initState();
+    SponsoredAds.load().then((a) {
+      if (mounted) setState(() => _ads = a);
+    }).catchError((_) {});
     _scroll.addListener(() {
       if (_scroll.position.pixels > _scroll.position.maxScrollExtent - 600) _load();
     });
@@ -151,9 +215,10 @@ class _PostListState extends State<PostList> with AutomaticKeepAliveClientMixin 
           child: ListView.builder(
             controller: _scroll,
             padding: const EdgeInsets.all(10),
-            itemCount: _posts.length + 1,
+            itemCount: _posts.length + (_ads.isEmpty ? 0 : _posts.length ~/ 6) + 1,
             itemBuilder: (c, i) {
-              if (i == _posts.length) {
+              final adCount = _ads.isEmpty ? 0 : _posts.length ~/ 6;
+              if (i == _posts.length + adCount) {
                 return Padding(
                   padding: const EdgeInsets.all(16),
                   child: Center(
@@ -163,7 +228,10 @@ class _PostListState extends State<PostList> with AutomaticKeepAliveClientMixin 
                               style: TextStyle(color: Colors.black45))),
                 );
               }
-              return PostCard(_posts[i]);
+              if (_ads.isNotEmpty && (i + 1) % 7 == 0) {
+                return SponsoredCard(_ads[((i + 1) ~/ 7 - 1) % _ads.length]);
+              }
+              return PostCard(_posts[_ads.isEmpty ? i : i - (i + 1) ~/ 7]);
             },
           ),
         ),

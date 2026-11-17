@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../app_only.dart';
 import 'package:video_player/video_player.dart';
 import 'package:web/web.dart' as web;
 import '../widgets.dart';
@@ -42,7 +43,7 @@ class TvScreen extends StatelessWidget {
                 img: str(t['imageUrl']),
                 live: '${t['is_live']}' == '1',
                 onTap: locked
-                    ? () => toast(c, 'This channel needs coins. Open it in the mobile app.')
+                    ? () => AppOnly.show(c, 'Paid channel', why: 'This channel needs coins. Watch it in the mobile app.')
                     : () => Navigator.of(c).push(MaterialPageRoute(
                         builder: (_) => VideoScreen(title: str(t['name']), url: str(t['tv_url'])))),
               );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../app_only.dart';
 import 'package:intl/intl.dart';
 import '../api.dart';
 import '../widgets.dart';
@@ -254,7 +255,7 @@ class CampaignDetailScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 SelectableText(str(item['description'])),
                 const SizedBox(height: 16),
-                const Text('To donate, use the mobile app.', style: TextStyle(color: Colors.black45, fontSize: 12)),
+                const AppOnlyNote('Donating works in the mobile app.'),
               ]),
             ),
           ]),

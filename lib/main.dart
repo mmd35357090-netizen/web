@@ -33,6 +33,16 @@ class WebApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: brand),
         scaffoldBackgroundColor: const Color(0xFFF5F6FA),
+        cardTheme: CardThemeData(
+          color: Colors.white,
+          elevation: 0,
+          margin: const EdgeInsets.symmetric(vertical: 5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFFE6E8F0)),
+          ),
+        ),
+        dividerTheme: const DividerThemeData(color: Color(0xFFE6E8F0), space: 1),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
           surfaceTintColor: Colors.white,

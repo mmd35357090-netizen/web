@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../app_only.dart';
 import 'package:intl/intl.dart';
 import '../widgets.dart';
 import 'paged_list.dart';
@@ -75,8 +76,7 @@ class CompetitionDetailScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 SelectableText(str(item['description'])),
                 const SizedBox(height: 16),
-                const Text('Join and submit your entry in the mobile app.',
-                    style: TextStyle(color: Colors.black45, fontSize: 12)),
+                const AppOnlyNote('Joining a competition and submitting your entry works in the mobile app.'),
               ]),
             ),
           ]),

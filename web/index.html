@@ -4,10 +4,22 @@
   <base href="$FLUTTER_BASE_HREF">
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="Connect to Friends">
   <meta name="theme-color" content="#4169E1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Connect to Friends">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="favicon.png">
   <link rel="manifest" href="manifest.json">
+  <style>
+    html, body { background:#fff; margin:0; overscroll-behavior:none; -webkit-text-size-adjust:100%; }
+    #cfg-splash { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#4169E1; color:#fff; font-family:-apple-system,system-ui,sans-serif; z-index:10; transition:opacity .3s; }
+    #cfg-splash img { width:84px; height:84px; border-radius:20px; }
+    #cfg-splash p { margin:14px 0 0; font-size:18px; font-weight:700; }
+  </style>
   <title>Connect to Friends</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
@@ -27,6 +39,20 @@
   </script>
 </head>
 <body>
+  <div id="cfg-splash"><img src="icons/Icon-192.png" alt=""><p>Connect to Friends</p></div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      var e = document.getElementById('cfg-splash');
+      if (e) { e.style.opacity = 0; setTimeout(function () { e.remove(); }, 350); }
+    });
+    // true on iPhone/iPad Safari when the site is NOT yet added to the Home Screen
+    window.cfgIosInstallable = function () {
+      var ua = navigator.userAgent || '';
+      var ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      var standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+      return ios && !standalone;
+    };
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
