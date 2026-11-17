@@ -6,6 +6,9 @@ class AppConfig {
   /// Google "Web client ID" (ends with .apps.googleusercontent.com). Leave empty to hide the Google button.
   /// It must also be listed in the server's socialLogin -> googleClientIds.
   static const String googleClientId = '559111651319-gjc71odm8dvecf3mhljkl47kat6e461o.apps.googleusercontent.com';
+  /// Apps Link
+  static const String playStoreUrl = 'https://google.com';
+  static const String appStoreUrl = 'https://apple.com';
 
   /// chat server (Socket.IO)
   static const socketUrl = 'https://connecttofriends.com:4000/';
