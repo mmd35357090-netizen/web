@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../api.dart';
 import '../models.dart';
 import '../widgets.dart';
+import 'create_club_screen.dart';
 import 'feed_screen.dart';
 
 class ClubItem {
@@ -58,6 +59,17 @@ class _ClubsScreenState extends State<ClubsScreen> with SingleTickerProviderStat
     return Scaffold(
       appBar: AppBar(
         title: const Text('Clubs'),
+        actions: [
+          IconButton(
+            tooltip: 'Create club',
+            icon: const Icon(Icons.add_circle_outline_rounded),
+            onPressed: () async {
+              final ok = await Navigator.of(context)
+                  .push<bool>(MaterialPageRoute(builder: (_) => const CreateClubScreen()));
+              if (ok == true && mounted) setState(() {});
+            },
+          ),
+        ],
         bottom: TabBar(controller: _tabs, tabs: const [Tab(text: 'Discover'), Tab(text: 'My clubs')]),
       ),
       body: Column(children: [

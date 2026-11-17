@@ -3,9 +3,11 @@ import 'clubs_screen.dart';
 import 'competitions_screen.dart';
 import 'events_screen.dart';
 import 'jobs_screen.dart';
+import 'offers_fundraising_screens.dart';
 import 'podcasts_screen.dart';
 import 'polls_hashtags_screens.dart';
 import 'shop_screen.dart';
+import 'tv_screen.dart';
 
 class ExploreHub extends StatelessWidget {
   const ExploreHub({super.key});
@@ -18,6 +20,9 @@ class ExploreHub extends StatelessWidget {
       (Icons.podcasts_rounded, 'Podcasts', 'Listen to shows', const PodcastsScreen()),
       (Icons.emoji_events_outlined, 'Competitions', 'Join and win', const CompetitionsScreen()),
       (Icons.work_outline_rounded, 'Jobs', 'Browse openings', const JobsScreen()),
+      (Icons.local_offer_outlined, 'Offers', 'Coupons and deals', const OffersScreen()),
+      (Icons.volunteer_activism_outlined, 'Fundraising', 'Support a cause', const FundraisingScreen()),
+      (Icons.tv_rounded, 'TV', 'Shows and channels', const TvScreen()),
       (Icons.poll_outlined, 'Polls', 'Vote and see results', const PollsScreen()),
       (Icons.tag_rounded, 'Hashtags', 'Trending topics', const TrendingScreen()),
       (Icons.storefront_outlined, 'Shop', 'Buy and sell nearby', const ShopScreen()),

@@ -1,11 +1,11 @@
 {
-  "name": "Facehub",
-  "short_name": "Facehub",
+  "name": "Connect to Friends",
+  "short_name": "Connect to Friends",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#FFFFFF",
   "theme_color": "#4169E1",
-  "description": "Facehub",
+  "description": "Connect to Friends",
   "orientation": "portrait-primary",
   "prefer_related_applications": false,
   "icons": []

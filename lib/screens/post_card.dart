@@ -52,6 +52,46 @@ class _PostCardState extends State<PostCard> {
     } else if (v == 'report') {
       final r = await Api.post('posts/report-post', {'post_id': p.id.toString()});
       if (mounted) toast(context, r.ok ? 'Thanks, we will review this post' : 'Could not report');
+    } else if (v == 'edit') {
+      final ctrl = TextEditingController(text: p.title);
+      bool comments = p.commentsEnabled;
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (c) => StatefulBuilder(
+          builder: (c, setD) => AlertDialog(
+            title: const Text('Edit post'),
+            content: SizedBox(
+              width: 420,
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                TextField(controller: ctrl, maxLines: 5, decoration: const InputDecoration(labelText: 'Caption')),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Allow comments'),
+                  value: comments,
+                  onChanged: (x) => setD(() => comments = x),
+                ),
+              ]),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+              FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Save')),
+            ],
+          ),
+        ),
+      );
+      final text = ctrl.text.trim();
+      ctrl.dispose();
+      if (ok != true) return;
+      final r = await Api.put('posts/${p.id}', {'title': text, 'is_comment_enable': comments ? 1 : 0});
+      if (!mounted) return;
+      if (r.ok) {
+        setState(() {
+          p.title = text;
+          p.commentsEnabled = comments;
+        });
+      } else {
+        toast(context, r.message.isEmpty ? 'Could not update' : r.message);
+      }
     } else if (v == 'delete') {
       final ok = await showDialog<bool>(
         context: context,
@@ -177,8 +217,10 @@ class _PostCardState extends State<PostCard> {
               onSelected: _menu,
               itemBuilder: (c) => [
                 PopupMenuItem(value: 'save', child: Text(p.isSaved ? 'Remove from saved' : 'Save')),
-                if (mine)
-                  const PopupMenuItem(value: 'delete', child: Text('Delete'))
+                if (mine) ...[
+                  const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                ]
                 else
                   const PopupMenuItem(value: 'report', child: Text('Report')),
               ],

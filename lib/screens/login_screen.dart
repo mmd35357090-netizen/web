@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../api.dart';
 import '../config.dart';
+import '../google_login.dart';
 import '../widgets.dart';
 import 'auth_screens.dart';
 import 'home_shell.dart';
@@ -47,6 +48,28 @@ class _LoginScreenState extends State<LoginScreen> {
       toast(context, 'Please verify your account in the mobile app first.');
     } else {
       toast(context, r.message.isNotEmpty ? r.message : 'Login failed');
+    }
+  }
+
+  Future<void> _google(String idToken) async {
+    final claims = decodeGoogleToken(idToken);
+    if (claims == null || claims['sub'] == null) {
+      toast(context, 'Google sign-in failed');
+      return;
+    }
+    setState(() => _busy = true);
+    final r = await Api.loginGoogle(idToken, claims);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (r.ok && r.data is Map && r.data['auth_key'] != null) {
+      await Api.saveToken(r.data['auth_key'].toString());
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomeShell()),
+        (route) => false,
+      );
+    } else {
+      toast(context, r.message.isNotEmpty ? r.message : 'Google sign-in failed');
     }
   }
 
@@ -118,6 +141,16 @@ class _LoginScreenState extends State<LoginScreen> {
                             : const Text('Log in', style: TextStyle(fontSize: 16)),
                       ),
                     ),
+                    if (AppConfig.googleClientId.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      const Row(children: [
+                        Expanded(child: Divider()),
+                        Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Text('or')),
+                        Expanded(child: Divider()),
+                      ]),
+                      const SizedBox(height: 12),
+                      Center(child: GoogleButton(onCredential: _google)),
+                    ],
                     const SizedBox(height: 16),
                     TextButton(
                       onPressed: () => Navigator.of(context)

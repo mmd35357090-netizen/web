@@ -5,10 +5,26 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Facehub">
+  <meta name="description" content="Connect to Friends">
   <meta name="theme-color" content="#4169E1">
   <link rel="manifest" href="manifest.json">
-  <title>Facehub</title>
+  <title>Connect to Friends</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    window.cfgGoogleInit = function (cid, cb) { window.__cfgG = { cid: cid, cb: cb }; };
+    window.cfgGoogleRender = function (el, w) {
+      var tries = 0;
+      (function go() {
+        if (window.google && google.accounts && window.__cfgG) {
+          google.accounts.id.initialize({
+            client_id: window.__cfgG.cid,
+            callback: function (r) { window.__cfgG.cb(r.credential); }
+          });
+          google.accounts.id.renderButton(el, { theme: 'outline', size: 'large', width: w, text: 'continue_with', shape: 'pill' });
+        } else if (tries++ < 100) { setTimeout(go, 100); }
+      })();
+    };
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

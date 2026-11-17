@@ -121,6 +121,31 @@ class Api {
     }
   }
 
+  /// Google sign-in: the server verifies [idToken] with Google before it logs the user in.
+  static Future<ApiResult> loginGoogle(String idToken, Map<String, dynamic> claims) async {
+    try {
+      final r = await http.post(_uri('users/login-social'), body: {
+        'social_type': 'google',
+        'social_id': '${claims['sub']}',
+        'id_token': idToken,
+        'email': '${claims['email'] ?? ''}',
+        'name': '${claims['name'] ?? ''}',
+        'username': '',
+        'device_type': '3',
+        'device_token': '',
+        'device_token_voip_ios': '',
+        'device_model': 'web',
+        'device_os_version': 'web',
+        'device_app_release_version': '1.0.0',
+        'login_ip': '',
+        'login_location': '',
+      });
+      return _parse(r);
+    } catch (_) {
+      return ApiResult(false, 0, null, 'Network error. Please check your connection.');
+    }
+  }
+
   /// uploads one file (type 7 = post media) and returns {file, fileUrl} or an error message
   static Future<ApiResult> upload(String name, Uint8List bytes, String mime, {String type = '7'}) async {
     try {
@@ -134,6 +159,15 @@ class Api {
       return _parse(r);
     } catch (_) {
       return ApiResult(false, 0, null, 'Upload failed. Please check your connection.');
+    }
+  }
+
+  static Future<ApiResult> put(String path, Map<String, dynamic> body) async {
+    try {
+      final r = await http.put(_uri(path), headers: _headers(json: true), body: jsonEncode(body));
+      return _parse(r);
+    } catch (_) {
+      return ApiResult(false, 0, null, 'Network error. Please check your connection.');
     }
   }
 
