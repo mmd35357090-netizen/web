@@ -7,6 +7,7 @@ import 'blocked_support_screens.dart';
 import 'edit_profile_screen.dart';
 import 'hashtag_screen.dart';
 import 'login_screen.dart';
+import 'gifts_subscriptions_screens.dart';
 import 'settings_extra_screens.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -97,6 +98,24 @@ class SettingsScreen extends StatelessWidget {
               title: const Text('FAQ'),
               onTap: () => Navigator.of(context)
                   .push(MaterialPageRoute(builder: (_) => const FaqScreen())),
+            ),
+            ListTile(
+              leading: const Icon(Icons.card_giftcard_rounded),
+              title: const Text('Gifts received'),
+              onTap: () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const ReceivedGiftsScreen())),
+            ),
+            ListTile(
+              leading: const Icon(Icons.workspace_premium_outlined),
+              title: const Text('My subscriptions'),
+              onTap: () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const SubscriptionsScreen(mine: true))),
+            ),
+            ListTile(
+              leading: const Icon(Icons.groups_2_outlined),
+              title: const Text('My subscribers'),
+              onTap: () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const SubscriptionsScreen(mine: false))),
             ),
             ListTile(
               leading: const Icon(Icons.block_rounded),

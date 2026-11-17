@@ -105,7 +105,7 @@ class _PostListState extends State<PostList> with AutomaticKeepAliveClientMixin 
     if (_loading || _page > _pageCount) return;
     _loading = true;
     final r = await Api.get(
-        'posts/search-post?expand=user.isFollowing,isFavorite&${widget.query}&page=$_page');
+        'posts/search-post?expand=user.isFollowing,isFavorite,isPin&${widget.query}&page=$_page');
     if (!mounted) return;
     setState(() {
       _loading = false;

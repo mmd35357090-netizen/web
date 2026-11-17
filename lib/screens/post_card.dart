@@ -52,6 +52,18 @@ class _PostCardState extends State<PostCard> {
     } else if (v == 'report') {
       final r = await Api.post('posts/report-post', {'post_id': p.id.toString()});
       if (mounted) toast(context, r.ok ? 'Thanks, we will review this post' : 'Could not report');
+    } else if (v == 'pin') {
+      final wasPinned = p.pinId != null;
+      final r = wasPinned
+          ? await Api.delete('pins/${p.pinId}')
+          : await Api.post('pins', {'reference_id': '${p.id}', 'type': 1});
+      if (!mounted) return;
+      if (r.ok) {
+        setState(() => p.pinId = wasPinned ? null : (int.tryParse('${r.data is Map ? r.data['id'] : ''}') ?? 0));
+        toast(context, wasPinned ? 'Unpinned' : 'Pinned to your profile');
+      } else {
+        toast(context, r.message.isEmpty ? 'Could not update pin' : r.message);
+      }
     } else if (v == 'edit') {
       final ctrl = TextEditingController(text: p.title);
       bool comments = p.commentsEnabled;
@@ -218,6 +230,7 @@ class _PostCardState extends State<PostCard> {
               itemBuilder: (c) => [
                 PopupMenuItem(value: 'save', child: Text(p.isSaved ? 'Remove from saved' : 'Save')),
                 if (mine) ...[
+                  PopupMenuItem(value: 'pin', child: Text(p.pinId != null ? 'Unpin' : 'Pin to profile')),
                   const PopupMenuItem(value: 'edit', child: Text('Edit')),
                   const PopupMenuItem(value: 'delete', child: Text('Delete')),
                 ]

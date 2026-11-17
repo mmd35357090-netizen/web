@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../api.dart';
-import '../models.dart';
 import '../widgets.dart';
 import 'create_club_screen.dart';
 import 'feed_screen.dart';

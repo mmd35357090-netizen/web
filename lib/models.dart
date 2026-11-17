@@ -76,6 +76,7 @@ class AppPost {
   bool isLiked = false;
   bool commentsEnabled = true;
   bool isSaved = false;
+  int? pinId; // set when the post is pinned on its owner's profile
   int contentType = 1; // 1 text, 2 media, others are special posts
   int createdAt = 0;
   String? shareLink;
@@ -96,6 +97,7 @@ class AppPost {
     p.isLiked = _i(j['is_like']) == 1;
     p.commentsEnabled = j['is_comment_enable'] == null || _i(j['is_comment_enable']) == 1;
     p.isSaved = _i(j['isFavorite']) == 1;
+    p.pinId = j['isPin'] is Map ? _i(j['isPin']['id']) : null;
     p.contentType = _i(j['post_content_type'], 1);
     p.createdAt = _i(j['created_at']);
     p.shareLink = j['share_link']?.toString();

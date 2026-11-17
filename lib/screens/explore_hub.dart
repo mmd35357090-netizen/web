@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'clubs_screen.dart';
 import 'competitions_screen.dart';
+import 'dating_screens.dart';
 import 'events_screen.dart';
 import 'jobs_screen.dart';
 import 'offers_fundraising_screens.dart';
@@ -22,6 +23,7 @@ class ExploreHub extends StatelessWidget {
       (Icons.work_outline_rounded, 'Jobs', 'Browse openings', const JobsScreen()),
       (Icons.local_offer_outlined, 'Offers', 'Coupons and deals', const OffersScreen()),
       (Icons.volunteer_activism_outlined, 'Fundraising', 'Support a cause', const FundraisingScreen()),
+      (Icons.favorite_border_rounded, 'Dating', 'Meet new people', const DatingScreen()),
       (Icons.tv_rounded, 'TV', 'Shows and channels', const TvScreen()),
       (Icons.poll_outlined, 'Polls', 'Vote and see results', const PollsScreen()),
       (Icons.tag_rounded, 'Hashtags', 'Trending topics', const TrendingScreen()),

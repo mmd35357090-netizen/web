@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../api.dart';
 import '../widgets.dart';
+import 'create_event_screen.dart';
 
 class EventItem {
   int id = 0;
@@ -118,7 +119,17 @@ class _EventsScreenState extends State<EventsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Events')),
+      appBar: AppBar(title: const Text('Events'), actions: [
+        IconButton(
+          tooltip: 'Create event',
+          icon: const Icon(Icons.add_circle_outline_rounded),
+          onPressed: () async {
+            final ok = await Navigator.of(context)
+                .push<bool>(MaterialPageRoute(builder: (_) => const CreateEventScreen()));
+            if (ok == true && mounted) setState(() {});
+          },
+        ),
+      ]),
       body: Column(children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
