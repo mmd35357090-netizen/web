@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../api.dart';
 import '../models.dart';
 import '../widgets.dart';
@@ -6,6 +7,7 @@ import 'comments_sheet.dart';
 import 'hashtag_screen.dart';
 import 'profile_screen.dart';
 import '../session.dart';
+import '../links.dart';
 
 class PostCard extends StatefulWidget {
   final AppPost post;
@@ -42,6 +44,11 @@ class _PostCardState extends State<PostCard> {
   bool _hidden = false;
 
   Future<void> _menu(String v) async {
+    if (v == 'copy') {
+      await Clipboard.setData(ClipboardData(text: AppLinks.post(p.id)));
+      if (mounted) toast(context, 'Link copied');
+      return;
+    }
     if (v == 'save') {
       final was = p.isSaved;
       setState(() => p.isSaved = !was);
@@ -228,6 +235,7 @@ class _PostCardState extends State<PostCard> {
             trailing: PopupMenuButton<String>(
               onSelected: _menu,
               itemBuilder: (c) => [
+                const PopupMenuItem(value: 'copy', child: Text('Copy link')),
                 PopupMenuItem(value: 'save', child: Text(p.isSaved ? 'Remove from saved' : 'Save')),
                 if (mine) ...[
                   PopupMenuItem(value: 'pin', child: Text(p.pinId != null ? 'Unpin' : 'Pin to profile')),
@@ -271,6 +279,11 @@ class _PostCardState extends State<PostCard> {
                 IconButton(onPressed: _comments, icon: const Icon(Icons.mode_comment_outlined)),
                 Text('${p.comments}'),
               ],
+              IconButton(
+                tooltip: 'Share',
+                onPressed: () => AppLinks.share(context, AppLinks.post(p.id), title: 'Post'),
+                icon: const Icon(Icons.share_outlined),
+              ),
               const Spacer(),
               if (p.views > 0)
                 Padding(

@@ -8,6 +8,7 @@ import '../api.dart';
 import '../chat/chat_models.dart';
 import '../chat/chat_service.dart';
 import '../config.dart';
+import '../endpoints.dart';
 import '../models.dart';
 import '../session.dart';
 import '../widgets.dart';
@@ -264,8 +265,8 @@ class _ChatScreenState extends State<ChatScreen> {
     final localId = '${DateTime.now().microsecondsSinceEpoch}$_myId';
     final nowSec = (DateTime.now().millisecondsSinceEpoch / 1000).round();
     final content = jsonEncode(isVideo
-        ? {'messageType': 3, 'video': url, 'image': ''}
-        : {'messageType': 2, 'image': url});
+        ? {'messageType': 3, 'video': Endpoints.restore(url), 'image': ''}
+        : {'messageType': 2, 'image': Endpoints.restore(url)});
     ChatService.instance.emit('sendMessage', {
       'userId': _myId,
       'localMessageId': localId,

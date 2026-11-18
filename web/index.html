@@ -45,6 +45,14 @@
       var e = document.getElementById('cfg-splash');
       if (e) { e.style.opacity = 0; setTimeout(function () { e.remove(); }, 350); }
     });
+    window.cfgShare = function (url, title, text) {
+      if (navigator.share) {
+        return navigator.share({ url: url, title: title, text: text }).then(
+          function () { return true; },
+          function (e) { return !!(e && e.name === 'AbortError'); });
+      }
+      return Promise.resolve(false);
+    };
     // true on iPhone/iPad Safari when the site is NOT yet added to the Home Screen
     window.cfgIosInstallable = function () {
       var ua = navigator.userAgent || '';

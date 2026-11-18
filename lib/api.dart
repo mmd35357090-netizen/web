@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'config.dart';
+import 'endpoints.dart';
 
 class ApiResult {
   final bool ok;
@@ -60,7 +61,7 @@ class Api {
 
   static ApiResult _parse(http.Response r) {
     try {
-      final j = jsonDecode(utf8.decode(r.bodyBytes));
+      final j = jsonDecode(Endpoints.hide(utf8.decode(r.bodyBytes)));
       int status = r.statusCode;
       String msg = '';
       dynamic data;
@@ -81,7 +82,7 @@ class Api {
     }
   }
 
-  static Uri _uri(String path) => Uri.parse('${AppConfig.apiBase}$path');
+  static Uri _uri(String path) => Uri.parse('${Endpoints.resolve(AppConfig.apiBase)}$path');
 
   static Future<ApiResult> get(String path) async {
     try {

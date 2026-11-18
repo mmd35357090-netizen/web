@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:aescryptojs/aescryptojs.dart';
 import '../config.dart';
+import '../endpoints.dart';
 import '../models.dart';
 
 String chatEncrypt(String s) {
@@ -58,7 +59,7 @@ class ChatMsg {
       try {
         final c = jsonDecode(body);
         if (c is Map) {
-          m.media = ((m.type == 3 ? c['video'] : c['image']) ?? '').toString();
+          m.media = Endpoints.hide(((m.type == 3 ? c['video'] : c['image']) ?? '').toString());
         }
       } catch (_) {}
     }

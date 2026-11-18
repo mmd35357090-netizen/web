@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import '../api.dart';
 import '../config.dart';
+import '../endpoints.dart';
 import '../session.dart';
 import 'chat_models.dart';
 
@@ -32,7 +33,7 @@ class ChatService {
     final me = await Session.load();
     if (me == null) return;
     final s = io.io(
-      AppConfig.socketUrl,
+      Endpoints.resolve(AppConfig.socketUrl),
       io.OptionBuilder().setTransports(['websocket', 'polling']).disableAutoConnect().build(),
     );
     _socket = s;

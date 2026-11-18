@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../links.dart';
 import '../api.dart';
 import '../models.dart';
 import '../widgets.dart';
@@ -28,7 +29,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    if (!_own) AppLinks.enter('/user/${widget.userId}');
     _load();
+  }
+
+  @override
+  void dispose() {
+    if (!_own) AppLinks.leave('/user/${widget.userId}');
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -129,18 +137,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (!_own)
             Align(
               alignment: Alignment.centerRight,
-              child: PopupMenuButton<String>(
-                onSelected: (v) => _userAction(v, u),
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'report', child: Text('Report user')),
-                  PopupMenuItem(value: 'block', child: Text('Block user')),
-                ],
-              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                IconButton(
+                  tooltip: 'Share profile',
+                  icon: const Icon(Icons.share_outlined),
+                  onPressed: () => AppLinks.share(context, AppLinks.user(u.id), title: u.displayName),
+                ),
+                PopupMenuButton<String>(
+                  onSelected: (v) => _userAction(v, u),
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'report', child: Text('Report user')),
+                    PopupMenuItem(value: 'block', child: Text('Block user')),
+                  ],
+                ),
+              ]),
             ),
           if (_own)
             Align(
               alignment: Alignment.centerRight,
-              child: IconButton(
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                IconButton(
+                  tooltip: 'Share my profile',
+                  icon: const Icon(Icons.share_outlined),
+                  onPressed: () => AppLinks.share(context, AppLinks.user(u.id), title: u.displayName),
+                ),
+                IconButton(
                 tooltip: 'Settings',
                 icon: const Icon(Icons.settings_outlined),
                 onPressed: () async {
@@ -149,6 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if (mounted) _load();
                 },
               ),
+              ]),
             ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),

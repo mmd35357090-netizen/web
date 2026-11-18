@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../api.dart';
 import '../config.dart';
 import '../google_login.dart';
+import '../links.dart';
 import '../widgets.dart';
 import 'auth_screens.dart';
 import 'home_shell.dart';
@@ -97,8 +98,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         textAlign: TextAlign.center,
                         style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 4),
-                    const Text('Log in to continue',
-                        textAlign: TextAlign.center, style: TextStyle(color: Colors.black54)),
+                    Text(
+                        AppLinks.pending != null
+                            ? 'Log in or create an account to see this ${AppLinks.pending![0] == 'user' ? 'profile' : (AppLinks.pending![0] == 'tag' ? 'topic' : 'post')}'
+                            : 'Log in to continue',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: AppLinks.pending != null ? color : Colors.black54,
+                            fontWeight: AppLinks.pending != null ? FontWeight.w600 : FontWeight.normal)),
                     const SizedBox(height: 24),
                     TextField(
                       controller: _email,

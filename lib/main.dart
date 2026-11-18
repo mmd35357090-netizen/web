@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'api.dart';
 import 'config.dart';
+import 'links.dart';
 import 'screens/home_shell.dart';
 import 'screens/login_screen.dart';
 
@@ -9,6 +10,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Api.loadToken();
+  AppLinks.captureInitial();
   Api.onUnauthorized = () {
     Api.saveToken(null);
     navigatorKey.currentState?.pushAndRemoveUntil(
@@ -49,7 +51,11 @@ class WebApp extends StatelessWidget {
           elevation: 0,
         ),
       ),
-      home: Api.token == null ? const LoginScreen() : const HomeShell(),
+      // a shared link in the address bar must not be treated as an unknown route
+      onGenerateInitialRoutes: (_) => [
+        MaterialPageRoute(builder: (_) => Api.token == null ? const LoginScreen() : const HomeShell()),
+      ],
+      onUnknownRoute: (_) => MaterialPageRoute(builder: (_) => const HomeShell()),
     );
   }
 }

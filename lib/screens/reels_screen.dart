@@ -5,6 +5,7 @@ import '../models.dart';
 import '../widgets.dart';
 import 'comments_sheet.dart';
 import 'profile_screen.dart';
+import '../links.dart';
 
 class ReelsScreen extends StatefulWidget {
   const ReelsScreen({super.key});
@@ -235,6 +236,12 @@ class _ReelItemState extends State<_ReelItem> {
                 ),
                 Text('${p.comments}', style: const TextStyle(color: Colors.white)),
               ],
+              const SizedBox(height: 14),
+              IconButton(
+                tooltip: 'Share',
+                onPressed: () => AppLinks.share(context, AppLinks.post(p.id), title: 'Reel'),
+                icon: const Icon(Icons.share_outlined, color: Colors.white, size: 30),
+              ),
             ]),
           ),
           Positioned(

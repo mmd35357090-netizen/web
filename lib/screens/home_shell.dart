@@ -15,6 +15,7 @@ import 'settings_screen.dart';
 import 'hashtag_screen.dart';
 import '../app_only.dart';
 import '../install_hint.dart';
+import '../links.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -30,6 +31,9 @@ class _HomeShellState extends State<HomeShell> {
   void initState() {
     super.initState();
     ChatService.instance.connect();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) AppLinks.openPending(context);
+    });
     Session.load().then((_) {
       if (mounted) setState(() {});
     });
