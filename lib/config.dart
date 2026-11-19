@@ -11,7 +11,7 @@ class AppConfig {
   static const String appStoreUrl = 'https://apple.com';
 
   /// chat server (Socket.IO)
-  static const socketUrl = 'https://connecttofriends.com:4000/';
+  static const socketUrl = 'https://connecttofriends.com/';
   static const chatVersion = 1;
   static const enableEncryption = 1;
   // same key the Android app uses for chat messages (it can be read from the app too, so it is not a real secret)
