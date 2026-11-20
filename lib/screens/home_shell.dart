@@ -41,9 +41,9 @@ class _HomeShellState extends State<HomeShell> {
 
   static const _items = <_Nav>[
     _Nav('Home', Icons.home_outlined, Icons.home_rounded),
+    _Nav('Explore', Icons.search_outlined, Icons.search_rounded),
     _Nav('Reels', Icons.play_circle_outline_rounded, Icons.play_circle_rounded),
     _Nav('Chat', Icons.chat_bubble_outline_rounded, Icons.chat_bubble_rounded),
-    _Nav('Alerts', Icons.notifications_none_rounded, Icons.notifications_rounded),
     _Nav('Profile', Icons.person_outline_rounded, Icons.person_rounded),
   ];
 
@@ -52,11 +52,11 @@ class _HomeShellState extends State<HomeShell> {
       case 0:
         return const FeedScreen();
       case 1:
-        return _index == 1 ? const ReelsScreen() : const SizedBox.shrink();
+        return _index == 1 ? const ExploreHub() : const SizedBox.shrink();
       case 2:
-        return _index == 2 ? const ChatListScreen() : const SizedBox.shrink();
+        return _index == 2 ? const ReelsScreen() : const SizedBox.shrink();
       case 3:
-        return _index == 3 ? const NotificationsScreen() : const SizedBox.shrink();
+        return _index == 3 ? const ChatListScreen() : const SizedBox.shrink();
       default:
         return const ProfileScreen();
     }
@@ -66,13 +66,8 @@ class _HomeShellState extends State<HomeShell> {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CreatePostScreen()));
   }
 
-  Widget? _fab() => (_index == 1 || _index == 2)
-      ? null
-      : FloatingActionButton(
-          onPressed: _create,
-          tooltip: 'New post',
-          child: const Icon(Icons.add_rounded),
-        );
+  // the "+" button now lives in the feed header (same as the Android app)
+  Widget? _fab() => null;
 
   Future<void> _logout() async {
     await Api.post('users/logout', {});
@@ -98,7 +93,7 @@ class _HomeShellState extends State<HomeShell> {
       final w = MediaQuery.of(context).size.width;
       final extended = w >= 1100;
       final showRight = w >= 1280;
-      final maxW = _index == 1 ? 460.0 : (_index == 2 ? 940.0 : 680.0);
+      final maxW = _index == 2 ? 460.0 : (_index == 3 ? 940.0 : 680.0);
       return Scaffold(
         body: Row(
           children: [
@@ -238,10 +233,11 @@ class _Sidebar extends StatelessWidget {
               onTap: () => onSelect(i)),
         const Divider(height: 24),
         _item(context,
-            icon: Icons.apps_rounded,
-            label: 'Explore',
+            icon: Icons.notifications_none_rounded,
+            label: 'Alerts',
             selected: false,
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ExploreHub()))),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => Scaffold(appBar: AppBar(title: const Text('Notifications')), body: const NotificationsScreen())))),
         _item(context,
             icon: Icons.settings_outlined,
             label: 'Settings',

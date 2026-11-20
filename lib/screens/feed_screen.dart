@@ -3,7 +3,8 @@ import '../api.dart';
 import '../config.dart';
 import '../models.dart';
 import 'post_card.dart';
-import 'explore_hub.dart';
+import 'create_post_screen.dart';
+import 'notifications_screen.dart';
 import 'search_screen.dart';
 import 'story_viewer.dart';
 import 'sponsored.dart';
@@ -15,15 +16,58 @@ class FeedScreen extends StatefulWidget {
   State<FeedScreen> createState() => _FeedScreenState();
 }
 
-class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateMixin {
-  late final TabController _tabs = TabController(length: 2, vsync: this);
+class _FeedScreenState extends State<FeedScreen> {
+  // Same filters as the Android app: All / Following / Videos / Premium
+  static const _chips = ['All', 'Following', 'Videos', 'Premium'];
+  static const _queries = [
+    'is_recent=1',
+    'is_following_user_post=1',
+    'is_recent=1&is_video_post=1',
+    'is_recent=1&is_premium_post=1',
+  ];
+  int _seg = 0;
 
   bool _showHeader = true;
 
-  @override
-  void dispose() {
-    _tabs.dispose();
-    super.dispose();
+  void _openCreate() =>
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CreatePostScreen()));
+
+  void _openAlerts() => Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => Scaffold(appBar: AppBar(title: const Text('Notifications')), body: const NotificationsScreen())));
+
+  void _openSearch() => Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => Scaffold(appBar: AppBar(title: const Text('Search')), body: const SearchScreen())));
+
+  Widget _chipBar(ColorScheme cs) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+      child: Row(children: [
+        for (int i = 0; i < _chips.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () {
+                if (_seg != i) setState(() => _seg = i);
+              },
+              child: Container(
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(vertical: 11),
+                decoration: BoxDecoration(
+                  color: _seg == i ? Colors.black : cs.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(_chips[i],
+                    style: TextStyle(
+                        color: _seg == i ? Colors.white : Colors.black87,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13.5)),
+              ),
+            ),
+          ),
+        ],
+      ]),
+    );
   }
 
   // Facebook-style: the header slides away when you scroll down and comes back when you scroll up.
@@ -48,44 +92,36 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         if (!wide)
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 4, 4, 0),
+            padding: const EdgeInsets.fromLTRB(14, 6, 6, 0),
             child: Row(children: [
               Expanded(
                 child: Text(AppConfig.appName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: cs.primary)),
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black87)),
+              ),
+              IconButton(tooltip: 'Search', icon: const Icon(Icons.search_rounded), onPressed: _openSearch),
+              IconButton.filled(
+                tooltip: 'New post',
+                style: IconButton.styleFrom(backgroundColor: Colors.black),
+                icon: const Icon(Icons.add_rounded, color: Colors.white),
+                onPressed: _openCreate,
               ),
               IconButton(
-                tooltip: 'Explore',
-                icon: const Icon(Icons.apps_rounded),
-                onPressed: () => Navigator.of(context)
-                    .push(MaterialPageRoute(builder: (_) => const ExploreHub())),
-              ),
-              IconButton(
-                tooltip: 'Search',
-                icon: const Icon(Icons.search_rounded),
-                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => Scaffold(appBar: AppBar(title: const Text('Search')), body: const SearchScreen()))),
+                tooltip: 'Notifications',
+                icon: Icon(Icons.notifications_none_rounded, color: cs.primary),
+                onPressed: _openAlerts,
               ),
             ]),
           ),
         Row(children: [
-          Expanded(
-            child: TabBar(controller: _tabs, tabs: const [Tab(text: 'For you'), Tab(text: 'Following')]),
-          ),
+          Expanded(child: _chipBar(cs)),
           if (wide) ...[
+            IconButton(tooltip: 'Search', icon: const Icon(Icons.search_rounded), onPressed: _openSearch),
             IconButton(
-              tooltip: 'Explore',
-              icon: const Icon(Icons.apps_rounded),
-              onPressed: () => Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => const ExploreHub())),
-            ),
-            IconButton(
-              tooltip: 'Search',
-              icon: const Icon(Icons.search_rounded),
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => Scaffold(appBar: AppBar(title: const Text('Search')), body: const SearchScreen()))),
+              tooltip: 'Notifications',
+              icon: Icon(Icons.notifications_none_rounded, color: cs.primary),
+              onPressed: _openAlerts,
             ),
           ],
         ]),
@@ -105,10 +141,7 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
       Expanded(
         child: NotificationListener<ScrollNotification>(
           onNotification: _onScroll,
-          child: TabBarView(controller: _tabs, children: const [
-            PostList(query: 'is_recent=1'),
-            PostList(query: 'is_following_user_post=1'),
-          ]),
+          child: PostList(key: ValueKey('feed-$_seg'), query: _queries[_seg]),
         ),
       ),
     ]);

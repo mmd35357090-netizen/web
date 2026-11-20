@@ -92,7 +92,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Icon(Icons.forum_rounded, size: 52, color: color),
+                    Center(
+                      child: Image.network('icons/Icon-192.png',
+                          width: 88,
+                          height: 88,
+                          errorBuilder: (_, __, ___) => Icon(Icons.forum_rounded, size: 52, color: color)),
+                    ),
                     const SizedBox(height: 10),
                     Text(AppConfig.appName,
                         textAlign: TextAlign.center,

@@ -16,9 +16,7 @@
   <link rel="manifest" href="manifest.json">
   <style>
     html, body { background:#fff; margin:0; overscroll-behavior:none; -webkit-text-size-adjust:100%; }
-    #cfg-splash { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#4169E1; color:#fff; font-family:-apple-system,system-ui,sans-serif; z-index:10; transition:opacity .3s; }
-    #cfg-splash img { width:84px; height:84px; border-radius:20px; }
-    #cfg-splash p { margin:14px 0 0; font-size:18px; font-weight:700; }
+    #cfg-splash { position:fixed; inset:0; background:#2C1BF0 url(icons/splash.jpg) center/cover no-repeat; z-index:10; transition:opacity .3s; }
   </style>
   <title>Connect to Friends</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -39,7 +37,7 @@
   </script>
 </head>
 <body>
-  <div id="cfg-splash"><img src="icons/Icon-192.png" alt=""><p>Connect to Friends</p></div>
+  <div id="cfg-splash" role="img" aria-label="Connect to Friends"></div>
   <script>
     window.addEventListener('flutter-first-frame', function () {
       var e = document.getElementById('cfg-splash');
@@ -52,6 +50,35 @@
           function (e) { return !!(e && e.name === 'AbortError'); });
       }
       return Promise.resolve(false);
+    };
+    // one picture from a video (used as the cover of a new video post)
+    window.cfgVideoFrame = function (bytes, mime) {
+      return new Promise(function (resolve) {
+        var url = URL.createObjectURL(new Blob([bytes], { type: mime }));
+        var v = document.createElement('video');
+        var done = false;
+        function fin(r) { if (done) return; done = true; URL.revokeObjectURL(url); resolve(r); }
+        v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = url;
+        v.onloadedmetadata = function () {
+          try { v.currentTime = Math.min(0.5, (v.duration || 1) / 2); } catch (e) { fin(null); }
+        };
+        v.onseeked = function () {
+          try {
+            var w = v.videoWidth, h = v.videoHeight;
+            if (!w || !h) return fin(null);
+            var s = Math.min(1, 720 / Math.max(w, h));
+            var c = document.createElement('canvas');
+            c.width = Math.round(w * s); c.height = Math.round(h * s);
+            c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+            c.toBlob(function (b) {
+              if (!b) return fin(null);
+              b.arrayBuffer().then(function (ab) { fin({ data: new Uint8Array(ab), width: w, height: h }); });
+            }, 'image/jpeg', 0.8);
+          } catch (e) { fin(null); }
+        };
+        v.onerror = function () { fin(null); };
+        setTimeout(function () { fin(null); }, 20000);
+      });
     };
     // true on iPhone/iPad Safari when the site is NOT yet added to the Home Screen
     window.cfgIosInstallable = function () {
