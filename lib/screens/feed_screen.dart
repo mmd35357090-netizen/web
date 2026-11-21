@@ -152,7 +152,11 @@ class _FeedScreenState extends State<FeedScreen> {
 class PostList extends StatefulWidget {
   final String query;
   final bool shrink;
-  const PostList({super.key, required this.query, this.shrink = false});
+  /// Optional widget scrolled together with the posts (used by profile pages)
+  final Widget? header;
+  /// When set, only posts written by this user are kept (profile pages).
+  final int? ownerId;
+  const PostList({super.key, required this.query, this.shrink = false, this.header, this.ownerId});
 
   @override
   State<PostList> createState() => _PostListState();
@@ -201,8 +205,9 @@ class _PostListState extends State<PostList> with AutomaticKeepAliveClientMixin 
   Future<void> _load() async {
     if (_loading || _page > _pageCount) return;
     _loading = true;
+    // same request the Android app sends, plus a stamp so the browser never reuses an old answer
     final r = await Api.get(
-        'posts/search-post?expand=user.isFollowing,isFavorite,isPin&${widget.query}&page=$_page');
+        'posts/search-post?expand=isPin,contentReferenceDetail.categoryDetails,contentReferenceDetail.pollOptions,user.subscribedStatus,user.subscriptionPlanUser,user.isFollowing,user.userLiveDetail,clubDetail.createdByUser,clubDetail.totalJoinedUser,originPost.user,isFavorite,originPost,pollDetails,pollDetails.pollOptions,collaborate.collaboratorDetail&${widget.query}&page=$_page&_=${DateTime.now().millisecondsSinceEpoch}');
     if (!mounted) return;
     setState(() {
       _loading = false;
@@ -216,7 +221,13 @@ class _PostListState extends State<PostList> with AutomaticKeepAliveClientMixin 
       if (d is Map) {
         final items = d['items'];
         if (items is List) {
-          _posts.addAll(items.map((e) => AppPost.fromJson(e)).where((x) => x.id > 0));
+          final have = _posts.map((e) => e.id).toSet();
+          for (final x in items.map((e) => AppPost.fromJson(e))) {
+            if (x.id <= 0 || have.contains(x.id)) continue;
+            if (widget.ownerId != null && x.user.id != widget.ownerId) continue;
+            have.add(x.id);
+            _posts.add(x);
+          }
         }
         final meta = d['_meta'];
         if (meta is Map) {
@@ -225,20 +236,35 @@ class _PostListState extends State<PostList> with AutomaticKeepAliveClientMixin 
         _page += 1;
       }
     });
+    // if the first pages do not fill the screen there is nothing to scroll, so fetch more
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scroll.hasClients) return;
+      if (_scroll.position.maxScrollExtent < 400 && _page <= _pageCount) _load();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    if (!_firstDone) return const Center(child: CircularProgressIndicator());
+    final hdr = widget.header;
+    if (!_firstDone) {
+      if (hdr == null) return const Center(child: CircularProgressIndicator());
+      return ListView(children: [
+        hdr,
+        const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator())),
+      ]);
+    }
     if (_posts.isEmpty) {
-      return Center(
+      final empty = Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Text(_error.isEmpty ? 'Nothing here yet' : _error),
           TextButton(onPressed: _refresh, child: const Text('Reload')),
         ]),
       );
+      if (hdr == null) return empty;
+      return ListView(children: [hdr, Padding(padding: const EdgeInsets.all(24), child: empty)]);
     }
+    final off = hdr == null ? 0 : 1;
     return RefreshIndicator(
       onRefresh: _refresh,
       child: Align(
@@ -248,8 +274,10 @@ class _PostListState extends State<PostList> with AutomaticKeepAliveClientMixin 
           child: ListView.builder(
             controller: _scroll,
             padding: const EdgeInsets.all(10),
-            itemCount: _posts.length + (_ads.isEmpty ? 0 : _posts.length ~/ 6) + 1,
+            itemCount: _posts.length + (_ads.isEmpty ? 0 : _posts.length ~/ 6) + 1 + off,
             itemBuilder: (c, i) {
+              if (hdr != null && i == 0) return hdr;
+              i -= off;
               final adCount = _ads.isEmpty ? 0 : _posts.length ~/ 6;
               if (i == _posts.length + adCount) {
                 return Padding(

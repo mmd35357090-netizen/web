@@ -1,9 +1,0 @@
-সার্ভারে (api/modules/v1/models/Post.php) share_link অংশ খুঁজুন:
-
-    return Yii::$app->params['siteUrl'] . Yii::$app->urlManagerFrontend->baseUrl.'/post/share/?pid='.$model->unique_id;
-
-এটার বদলে বসান:
-
-    return (Yii::$app->params['webAppUrl'] ?? 'https://app.connecttofriends.com') . '/#/p/' . $model->unique_id;
-
-শুধু এই এক লাইন বদলাবে। সেভ করলেই নতুন শেয়ার লিংক ওয়েব অ্যাপে খুলবে। (সার্ভার রিস্টার্ট লাগবে না; OPcache থাকলে php-fpm/apache রিলোড করুন।)

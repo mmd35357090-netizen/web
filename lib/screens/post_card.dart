@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../api.dart';
 import '../models.dart';
+import '../video_frame.dart';
+import '../post_video.dart';
 import '../widgets.dart';
 import 'comments_sheet.dart';
 import 'hashtag_screen.dart';
@@ -163,10 +165,11 @@ class _PostCardState extends State<PostCard> {
             onPageChanged: (i) => setState(() => _page = i),
             itemBuilder: (c, i) {
               final m = p.media[i];
+              if (m.isVideo) return PostVideo(m.url, thumb: m.thumb);
               final src = m.isVideo ? (m.thumb ?? '') : m.url;
               return Stack(fit: StackFit.expand, children: [
                 src.isEmpty
-                    ? Container(color: Colors.black12)
+                    ? (m.isVideo && m.url.isNotEmpty ? VideoPoster(m.url) : Container(color: Colors.black12))
                     : netImage(src, width: double.infinity, height: double.infinity),
                 if (m.isVideo)
                   const Center(
@@ -263,6 +266,12 @@ class _PostCardState extends State<PostCard> {
                     child: Text(t, style: TextStyle(color: cs.primary, fontWeight: FontWeight.w600)),
                   ),
               ]),
+            ),
+          if (p.title.isEmpty && p.media.isEmpty)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Text('This post has special content. Open it in the app to see everything.',
+                  style: TextStyle(color: Colors.black54)),
             ),
           _mediaView(),
           Padding(

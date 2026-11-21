@@ -133,7 +133,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 640),
-        child: Column(children: [
+        child: PostList(query: 'user_id=${u.id}', ownerId: u.id, header: Column(mainAxisSize: MainAxisSize.min, children: [
           if (!_own)
             Align(
               alignment: Alignment.centerRight,
@@ -222,8 +222,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           HighlightsBar(key: ValueKey(u.id), userId: u.id, own: _own),
           const Divider(height: 1),
-          Expanded(child: PostList(query: 'user_id=${u.id}')),
-        ]),
+        ])),
       ),
     );
   }
