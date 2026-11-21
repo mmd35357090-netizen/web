@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../api.dart';
 import '../models.dart';
-import '../video_frame.dart';
 import '../post_video.dart';
 import '../widgets.dart';
 import 'comments_sheet.dart';
@@ -169,7 +168,7 @@ class _PostCardState extends State<PostCard> {
               final src = m.isVideo ? (m.thumb ?? '') : m.url;
               return Stack(fit: StackFit.expand, children: [
                 src.isEmpty
-                    ? (m.isVideo && m.url.isNotEmpty ? VideoPoster(m.url) : Container(color: Colors.black12))
+                    ? Container(color: Colors.black12)
                     : netImage(src, width: double.infinity, height: double.infinity),
                 if (m.isVideo)
                   const Center(
