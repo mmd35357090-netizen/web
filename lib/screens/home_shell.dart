@@ -209,11 +209,17 @@ class _Sidebar extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(bottom: 18, left: 4),
           child: Row(mainAxisAlignment: extended ? MainAxisAlignment.start : MainAxisAlignment.center, children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(color: cs.primary, borderRadius: BorderRadius.circular(11)),
-              child: const Icon(Icons.diversity_3_rounded, color: Colors.white, size: 22),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(11),
+              child: Image.network('icons/Icon-192.png',
+                  width: 38,
+                  height: 38,
+                  errorBuilder: (_, __, ___) => Container(
+                        width: 38,
+                        height: 38,
+                        color: cs.primary,
+                        child: const Icon(Icons.diversity_3_rounded, color: Colors.white, size: 22),
+                      )),
             ),
             if (extended) ...[
               const SizedBox(width: 10),

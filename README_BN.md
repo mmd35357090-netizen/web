@@ -1,16 +1,29 @@
-# ওয়েব: ভিডিও প্লে + সাউন্ড, প্রোফাইলে শুধু নিজের পোস্ট
-ওয়েব প্রজেক্টে বসাও (web_fix2-এর ওপর; feed_screen ও profile_screen এটাই সর্বশেষ):
+# ওয়েব ক্যাচ-আপ (স্টেজ ২৮-এর পরের সব ওয়েব আপডেট একসাথে)
+
+এতে web_stage28b, web_stage29, web_header, web_logo, web_fix2, web_video_fix —
+এই ছয়টার প্রতিটা ফাইলের **সর্বশেষ সংস্করণ** আছে। আলাদা ক্রমে বসাতে হবে না।
+কিছু আগে বসানো থাকলেও ক্ষতি নেই (ফলাফল একই)।
+
+## বসাও (ওয়েব রিপোতে, একই পথে, সব ফাইল ওভাররাইট)
+- lib/endpoints.dart
 - lib/post_video.dart (নতুন)
-- lib/screens/post_card.dart
+- lib/video_frame.dart
+- lib/screens/create_post_screen.dart
 - lib/screens/feed_screen.dart
+- lib/screens/home_shell.dart
+- lib/screens/login_screen.dart
+- lib/screens/post_card.dart
 - lib/screens/profile_screen.dart
-ভিডিওতে ট্যাপ = প্লে/পজ, ওপরে ডানে স্পিকার বাটন, নিচে প্রগ্রেস বার। একসাথে একটাই ভিডিও চলে।
-প্রোফাইলের পোস্ট ট্যাবে অন্যের পোস্ট এলে বাদ পড়ে।
-বিল্ডের পর ব্রাউজারে Ctrl+Shift+R (ক্যাশ)।
+- web/index.html
+- web/favicon.png
+- web/icons/ (৫টা আইকন)
 
-## আপডেট২: post_card এখন video_frame.dart ছাড়াই চলে
+কোনো pubspec বদল লাগে না।
 
-## আপডেট: কিছু পোস্ট দেখা না যাওয়া (এডমিনের পোস্টসহ)
-feed_screen.dart এখন Android অ্যাপের মতো একই অনুরোধ পাঠায়, প্রতিবার নতুন করে আনে (ব্রাউজারের পুরনো উত্তর নয়),
-স্ক্রিন না ভরলে আরও পোস্ট নিজে থেকে লোড করে, আর ডুপ্লিকেট বাদ দেয়।
-পোস্ট কার্ডে লেখা/ছবি না থাকা বিশেষ পোস্টে এখন একটা নোট দেখায় (আগে ফাঁকা কার্ড ছিল)।
+## তারপর
+git diff দেখো → push → GitHub Actions build → ব্রাউজারে Ctrl+Shift+R বা Incognito।
+Build ফেল করলে লাল error লাইন পাঠাও।
+
+## কী পাবে
+Android-এর মতো হেডার ও All/Following/Videos/Premium চিপ, লোগো/আইকন, প্রোফাইল একসাথে স্ক্রল,
+ভিডিওতে ট্যাপে প্লে/পজ + সাউন্ড বাটন, ফিডে সব পোস্ট (এডমিনের পোস্টসহ), ব্রাউজার বারের রং।

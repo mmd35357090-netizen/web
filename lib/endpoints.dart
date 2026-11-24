@@ -8,6 +8,9 @@ class Endpoints {
   /// Real backend host, as the server writes it in its replies.
   static const String backendHost = 'https://c2f.connecttofriends.com';
 
+  /// Older address the server may still write (kept working until the Android app moves over).
+  static const String oldBackendHost = 'https://facehub.sbehf.com';
+
   static String get origin => Uri.base.origin;
 
   /// "/api/web/v1/" -> "https://this-site/api/web/v1/". A full address is left alone.
@@ -18,9 +21,11 @@ class Endpoints {
   /// Server reply -> what the browser sees.
   static String hide(String s) {
     if (!_active) return s;
-    return s
-        .replaceAll(backendHost, origin)
-        .replaceAll(backendHost.replaceAll('/', r'\/'), origin.replaceAll('/', r'\/'));
+    var out = s;
+    for (final h in const [backendHost, oldBackendHost]) {
+      out = out.replaceAll(h, origin).replaceAll(h.replaceAll('/', r'\/'), origin.replaceAll('/', r'\/'));
+    }
+    return out;
   }
 
   /// Address seen by the browser -> real address (used when we send it to Android users).

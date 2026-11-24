@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../api.dart';
+import '../video_frame.dart';
 import '../widgets.dart';
 
 class _Picked {
@@ -126,14 +127,29 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         toast(context, r.message.isNotEmpty ? r.message : 'Could not upload ${f.name}');
         return;
       }
+      var thumb = '';
+      var vw = 0, vh = 0;
+      if (f.video) {
+        // a cover picture taken from the video itself, so it never shows as a black box
+        final fr = await grabVideoFrame(Uint8List.fromList(f.bytes), _mime(f.name));
+        if (fr != null) {
+          final tr = await Api.upload('cover.jpg', fr.jpeg, 'image/jpeg');
+          if (tr.ok && tr.data is Map && tr.data['files'] is List && (tr.data['files'] as List).isNotEmpty) {
+            final t = (tr.data['files'] as List).first;
+            if (t is Map && t['isProhabited'] != true) thumb = t['file']?.toString() ?? '';
+          }
+          vw = fr.width;
+          vh = fr.height;
+        }
+      }
       gallery.add({
         'filename': file,
-        'video_thumb': '',
+        'video_thumb': thumb,
         'type': '1',
         'media_type': f.video ? '2' : '1',
         'is_default': '1',
-        'height': '0',
-        'width': '0',
+        'height': '$vh',
+        'width': '$vw',
         'audio_time': '0',
       });
     }
