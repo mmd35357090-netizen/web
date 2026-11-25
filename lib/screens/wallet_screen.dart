@@ -10,6 +10,15 @@ import 'withdraw_screen.dart';
 
 String _money(dynamic v) => '\$${(double.tryParse('$v') ?? 0).toStringAsFixed(2)}';
 
+/// Small amounts keep their decimals (0.0001 stays 0.0001, not $0.00).
+String _tiny(double v) {
+  var t = v.toStringAsFixed(6).replaceAll(RegExp(r'0+$'), '');
+  if (t.endsWith('.')) t = t.substring(0, t.length - 1);
+  final dot = t.indexOf('.');
+  if (dot >= 0 && t.length - dot - 1 < 2) t = double.parse(t).toStringAsFixed(2);
+  return '\$$t';
+}
+
 String _typeName(int t) {
   switch (t) {
     case 1:
@@ -198,7 +207,7 @@ class _WalletScreenState extends State<WalletScreen> {
                             ListTile(
                               leading: const Icon(Icons.smart_display_outlined),
                               title: const Text('Watch & Earn'),
-                              subtitle: Text(_viewCoins > 0 ? 'Watch a sponsored video, earn $_viewCoins coins' : 'Watch a sponsored video to earn coins'),
+                              subtitle: Text(_viewCoins > 0 ? 'Watch a sponsored video, earn $_viewCoins ${_viewCoins == 1 ? 'coin' : 'coins'}' : 'Watch a sponsored video to earn coins'),
                               trailing: const Icon(Icons.chevron_right_rounded),
                               onTap: () async {
                                 final r = await Navigator.of(context)
@@ -210,7 +219,7 @@ class _WalletScreenState extends State<WalletScreen> {
                             ListTile(
                               leading: const Icon(Icons.currency_exchange_rounded),
                               title: const Text('Convert coins to money'),
-                              subtitle: Text(_perCoin > 0 ? '1 coin = ${_money(_perCoin)}' : 'Turn earned coins into balance'),
+                              subtitle: Text(_perCoin > 0 ? '1 coin = ${_tiny(_perCoin)}' : 'Turn earned coins into balance'),
                               trailing: const Icon(Icons.chevron_right_rounded),
                               onTap: _redeem,
                             ),
