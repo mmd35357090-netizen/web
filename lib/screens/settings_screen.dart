@@ -9,6 +9,7 @@ import 'hashtag_screen.dart';
 import 'login_screen.dart';
 import 'gifts_subscriptions_screens.dart';
 import 'settings_extra_screens.dart';
+import 'verification_screen.dart';
 import 'wallet_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -99,6 +100,12 @@ class SettingsScreen extends StatelessWidget {
               title: const Text('FAQ'),
               onTap: () => Navigator.of(context)
                   .push(MaterialPageRoute(builder: (_) => const FaqScreen())),
+            ),
+            ListTile(
+              leading: const Icon(Icons.verified_outlined),
+              title: const Text('Get verified'),
+              onTap: () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const VerificationScreen())),
             ),
             ListTile(
               leading: const Icon(Icons.account_balance_wallet_outlined),

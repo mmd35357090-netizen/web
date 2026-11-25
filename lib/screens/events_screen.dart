@@ -18,6 +18,8 @@ class EventItem {
   String disclaimer = '';
   bool free = true;
   List<Map<String, String>> tickets = [];
+  int get endTs => endDate > 0 ? endDate : startDate;
+  bool get ended => endTs > 0 && DateTime.now().millisecondsSinceEpoch ~/ 1000 > endTs;
 
   EventItem();
 
@@ -40,7 +42,7 @@ class EventItem {
     if (t is List) {
       for (final x in t) {
         if (x is Map) {
-          e.tickets.add({'name': '${x['ticket_type']}', 'price': '${x['price']}'});
+          e.tickets.add({'name': '${x['ticket_type']}', 'price': '${x['price']}', 'left': '${x['available_ticket'] ?? ''}'});
         }
       }
     }
@@ -122,6 +124,12 @@ class _EventsScreenState extends State<EventsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Events'), actions: [
         IconButton(
+          tooltip: 'My tickets',
+          icon: const Icon(Icons.confirmation_number_outlined),
+          onPressed: () => Navigator.of(context)
+              .push(MaterialPageRoute(builder: (_) => const MyTicketsScreen())),
+        ),
+        IconButton(
           tooltip: 'Create event',
           icon: const Icon(Icons.add_circle_outline_rounded),
           onPressed: () async {
@@ -186,6 +194,16 @@ class _EventsScreenState extends State<EventsScreen> {
                                       Text(e.when, style: const TextStyle(color: Colors.black54)),
                                       if (e.place.isNotEmpty)
                                         Text(e.place, style: const TextStyle(color: Colors.black54)),
+                                      const SizedBox(height: 6),
+                                      Wrap(spacing: 6, children: [
+                                        Chip(
+                                            visualDensity: VisualDensity.compact,
+                                            label: Text(e.free ? 'Free' : 'Paid', style: const TextStyle(fontSize: 12))),
+                                        if (e.ended)
+                                          const Chip(
+                                              visualDensity: VisualDensity.compact,
+                                              label: Text('Ended', style: TextStyle(fontSize: 12))),
+                                      ]),
                                     ]),
                                   ),
                                 ]),
@@ -234,6 +252,8 @@ class EventDetailScreen extends StatelessWidget {
                 const SizedBox(height: 14),
                 if (e.description.isNotEmpty) SelectableText(e.description),
                 const SizedBox(height: 14),
+                if (e.ended)
+                  const Padding(padding: EdgeInsets.only(bottom: 8), child: Chip(label: Text('This event has ended'))),
                 if (e.free)
                   const Chip(label: Text('Free event'))
                 else
@@ -242,10 +262,13 @@ class EventDetailScreen extends StatelessWidget {
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.confirmation_number_outlined),
                       title: Text(t['name'] ?? ''),
+                      subtitle: Text((int.tryParse(t['left'] ?? '') ?? 1) <= 0
+                          ? 'Sold out'
+                          : ((t['left'] ?? '').isEmpty ? '' : '${t['left']} left')),
                       trailing: Text(t['price'] ?? '', style: const TextStyle(fontWeight: FontWeight.w700)),
                     ),
                 const SizedBox(height: 10),
-                const AppOnlyNote('Booking tickets works in the mobile app.'),
+                const AppOnlyNote('Booking tickets works in the mobile app. Your tickets appear under "My tickets" here too.'),
                 if (e.disclaimer.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Text(e.disclaimer, style: const TextStyle(color: Colors.black45, fontSize: 12)),
@@ -255,6 +278,101 @@ class EventDetailScreen extends StatelessWidget {
           ]),
         ),
       ),
+    );
+  }
+}
+
+
+/// Tickets I booked (read only; booking itself is in the app).
+class MyTicketsScreen extends StatefulWidget {
+  const MyTicketsScreen({super.key});
+
+  @override
+  State<MyTicketsScreen> createState() => _MyTicketsScreenState();
+}
+
+class _MyTicketsScreenState extends State<MyTicketsScreen> {
+  bool _loading = true;
+  bool _upcoming = true;
+  List<Map> _items = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _loading = true);
+    final r = await Api.get('events/my-booked-event?current_status=${_upcoming ? 1 : 2}&expand=payment,event,ticketDetail');
+    if (!mounted) return;
+    final d = r.data is Map ? r.data['eventBooking'] : null;
+    final l = d is Map ? d['items'] : null;
+    setState(() {
+      _loading = false;
+      _items = l is List ? l.whereType<Map>().toList() : [];
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('My tickets')),
+      body: Column(children: [
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment(value: true, label: Text('Upcoming')),
+              ButtonSegment(value: false, label: Text('Past')),
+            ],
+            selected: {_upcoming},
+            onSelectionChanged: (s) {
+              _upcoming = s.first;
+              _load();
+            },
+          ),
+        ),
+        Expanded(
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _items.isEmpty
+                  ? const Center(child: Text('No tickets'))
+                  : Align(
+                      alignment: Alignment.topCenter,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 640),
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          itemCount: _items.length,
+                          itemBuilder: (c, i) {
+                            final b = _items[i];
+                            final ev = EventItem.fromJson(b['event']);
+                            final tt = b['ticketDetail'] is Map ? '${(b['ticketDetail'] as Map)['ticket_type']}' : '';
+                            final cancelled = '${b['status']}' == '2' || '${b['status']}' == '3';
+                            return Card(
+                              elevation: 0,
+                              child: ListTile(
+                                leading: ev.image != null && ev.image!.isNotEmpty
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: netImage(ev.image!, width: 52, height: 52))
+                                    : const Icon(Icons.confirmation_number_outlined),
+                                title: Text(ev.name),
+                                subtitle: Text('${ev.when}\n${b['ticket_qty']} x $tt${cancelled ? ' · Cancelled' : ''}'),
+                                isThreeLine: true,
+                                onTap: ev.id == 0
+                                    ? null
+                                    : () => Navigator.of(context)
+                                        .push(MaterialPageRoute(builder: (_) => EventDetailScreen(event: ev))),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+        ),
+      ]),
     );
   }
 }

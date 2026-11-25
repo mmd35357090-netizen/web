@@ -7,7 +7,7 @@ class AppConfig {
   /// It must also be listed in the server's socialLogin -> googleClientIds.
   static const String googleClientId = '559111651319-gjc71odm8dvecf3mhljkl47kat6e461o.apps.googleusercontent.com';
   /// Apps Link
-  static const String playStoreUrl = 'https://google.com';
+  static const String playStoreUrl = 'https://connecttofriends.com/connecttofriends.apk';
   static const String appStoreUrl = 'https://apple.com';
 
   /// chat server (Socket.IO)

@@ -6,6 +6,7 @@ import '../models.dart';
 import '../widgets.dart';
 import 'paged_list.dart';
 import 'profile_screen.dart';
+import 'dating_plans_screen.dart';
 
 int? _age(String dob) {
   final d = DateTime.tryParse(dob);
@@ -62,6 +63,10 @@ class _DiscoverState extends State<_Discover> {
   bool _loading = true;
   bool _busy = false;
   String _error = '';
+  Map _status = {};
+  final Map<int, List<String>> _photos = {};
+  int _photoIdx = 0;
+  int _lastSkipped = 0;
 
   @override
   void initState() {
@@ -69,119 +74,283 @@ class _DiscoverState extends State<_Discover> {
     _load();
   }
 
+  bool get _paused => _status['paused'] == true;
+  int get _superLeft => int.tryParse('${_status['super_likes_left'] ?? 0}') ?? 0;
+
+  Future<void> _loadStatus() async {
+    final r = await Api.get('datings/dating-status');
+    if (!mounted) return;
+    if (r.ok && r.data is Map) setState(() => _status = Map.from(r.data as Map));
+  }
+
   Future<void> _load() async {
     setState(() {
       _loading = true;
       _error = '';
     });
+    _loadStatus();
     final r = await Api.get('datings/preference-profile-match');
     if (!mounted) return;
     setState(() {
       _loading = false;
+      _photoIdx = 0;
       final l = r.data is Map ? r.data['preferenceMatchProfile'] : null;
       _profiles = l is List ? l.whereType<Map>().toList() : [];
       if (!r.ok) _error = r.message;
     });
+    _loadPhotos();
   }
 
-  Future<void> _act(bool like) async {
+  Future<void> _loadPhotos() async {
+    if (_profiles.isEmpty) return;
+    final id = int.tryParse('${_profiles.first['id']}') ?? 0;
+    if (id == 0 || _photos.containsKey(id)) return;
+    final r = await Api.get('datings/profile-photos?user_id=$id');
+    if (!mounted) return;
+    final l = r.ok && r.data is Map ? r.data['photos'] : null;
+    setState(() => _photos[id] = l is List ? l.map((e) => '$e').where((e) => e.isNotEmpty && e != 'null').toList() : []);
+  }
+
+  void _next() {
+    setState(() {
+      _profiles.removeAt(0);
+      _photoIdx = 0;
+    });
+    if (_profiles.isEmpty) {
+      _load();
+    } else {
+      _loadPhotos();
+    }
+  }
+
+  Future<void> _act(bool like, {bool superLike = false}) async {
     if (_profiles.isEmpty || _busy) return;
     final p = _profiles.first;
     setState(() => _busy = true);
     final r = await Api.post(like ? 'datings/profile-action-like' : 'datings/profile-action-skip',
-        {'profile_user_id': '${p['id']}'});
+        {'profile_user_id': '${p['id']}', if (superLike) 'super_like': '1'});
     if (!mounted) return;
     setState(() => _busy = false);
     if (r.ok) {
-      setState(() => _profiles.removeAt(0));
-      if (like) toast(context, 'Liked ${str(p['name'])}');
-      if (_profiles.isEmpty) _load();
+      final isMatch = r.data is Map && (r.data['is_match'] == true || '${r.data['is_match']}' == '1');
+      if (!like) _lastSkipped = int.tryParse('${p['id']}') ?? 0;
+      if (like) {
+        if (r.data is Map && r.data['super_likes_left'] != null) {
+          _status['super_likes_left'] = r.data['super_likes_left'];
+        }
+        toast(context, superLike ? 'Super liked ${str(p['name'])}' : 'Liked ${str(p['name'])}');
+      }
+      _next();
+      if (isMatch) _matchDialog(p);
     } else {
       toast(context, r.message.isEmpty ? 'Something went wrong' : r.message);
     }
   }
 
+  void _matchDialog(Map p) {
+    showDialog<void>(
+      context: context,
+      builder: (c) => AlertDialog(
+        icon: const Icon(Icons.favorite_rounded, color: Colors.pink, size: 40),
+        title: const Text("It's a match!", textAlign: TextAlign.center),
+        content: Text('You and ${str(p['name'])} liked each other.', textAlign: TextAlign.center),
+        actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('Keep swiping'))],
+      ),
+    );
+  }
+
+  Future<void> _rewind() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final r = await Api.post('datings/profile-action-rewind', _lastSkipped > 0 ? {'profile_user_id': '$_lastSkipped'} : {});
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (r.ok) {
+      toast(context, 'Last skip undone');
+      _lastSkipped = 0;
+      _load();
+    } else {
+      toast(context, r.message.isEmpty ? 'Nothing to rewind' : r.message);
+    }
+  }
+
+  Future<void> _boost() async {
+    final r = await Api.post('datings/boost', {});
+    if (!mounted) return;
+    toast(context, r.ok ? 'Boost on for 30 minutes' : (r.message.isEmpty ? 'Boost not available' : r.message));
+    _loadStatus();
+  }
+
+  Future<void> _unpause() async {
+    final r = await Api.post('datings/pause', {'paused': '0'});
+    if (!mounted) return;
+    if (r.ok) {
+      toast(context, 'Your profile is visible again');
+      _loadStatus();
+    } else {
+      toast(context, r.message.isEmpty ? 'Failed' : r.message);
+    }
+  }
+
+  Widget _round(IconData icon, Color color, VoidCallback? onTap, {double size = 28, String? tip, String? badge}) {
+    final b = FloatingActionButton(
+      heroTag: null,
+      mini: size < 26,
+      backgroundColor: Colors.white,
+      tooltip: tip,
+      onPressed: onTap,
+      child: Icon(icon, color: color, size: size),
+    );
+    if (badge == null) return b;
+    return Badge(label: Text(badge), child: b);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator());
+    final banner = _paused
+        ? MaterialBanner(
+            content: const Text('Your dating profile is paused, so nobody can see you.'),
+            leading: const Icon(Icons.pause_circle_outline),
+            actions: [TextButton(onPressed: _unpause, child: const Text('Show me'))],
+          )
+        : null;
     if (_profiles.isEmpty) {
-      return Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.favorite_border_rounded, size: 48),
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              _error.isNotEmpty
-                  ? _error
-                  : 'No profiles to show right now.\nCheck your dating settings (gender, age) with the ⚙ button.',
-              textAlign: TextAlign.center,
-            ),
+      return Column(children: [
+        if (banner != null) banner,
+        Expanded(
+          child: Center(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.favorite_border_rounded, size: 48),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  _error.isNotEmpty
+                      ? _error
+                      : 'No profiles to show right now.\nCheck your dating settings (gender, age) with the ⚙ button.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(spacing: 8, children: [
+                OutlinedButton(onPressed: _load, child: const Text('Refresh')),
+                if (_lastSkipped > 0) OutlinedButton(onPressed: _rewind, child: const Text('Undo last skip')),
+                OutlinedButton(
+                    onPressed: () => Navigator.of(context)
+                        .push(MaterialPageRoute(builder: (_) => const DatingPlansScreen())),
+                    child: const Text('Get more profiles')),
+              ]),
+            ]),
           ),
-          const SizedBox(height: 12),
-          OutlinedButton(onPressed: _load, child: const Text('Refresh')),
-        ]),
-      );
+        ),
+      ]);
     }
     final p = _profiles.first;
+    final id = int.tryParse('${p['id']}') ?? 0;
     final pic = str(p['picture']);
+    final gallery = <String>[
+      if (_photos[id] != null && _photos[id]!.isNotEmpty) ..._photos[id]! else if (pic.isNotEmpty && pic != 'null') pic
+    ];
+    final shown = gallery.isEmpty ? '' : gallery[_photoIdx.clamp(0, gallery.length - 1)];
     final age = _age(str(p['dob']));
+    final remaining = _status['remaining'];
+    final boostActive = _status['boost_active'] == true;
     return Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 440),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(children: [
-            Expanded(
+        child: Column(children: [
+          if (banner != null) banner,
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: Card(
                 clipBehavior: Clip.antiAlias,
                 elevation: 2,
                 child: Stack(fit: StackFit.expand, children: [
-                  pic.isEmpty || pic == 'null'
+                  shown.isEmpty
                       ? const ColoredBox(color: Colors.black12, child: Icon(Icons.person, size: 90))
-                      : netImage(pic, width: double.infinity, height: double.infinity),
+                      : netImage(shown, width: double.infinity, height: double.infinity),
+                  if (gallery.length > 1) ...[
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      right: 8,
+                      child: Row(children: [
+                        for (var i = 0; i < gallery.length; i++)
+                          Expanded(
+                            child: Container(
+                              height: 3,
+                              margin: const EdgeInsets.symmetric(horizontal: 2),
+                              decoration: BoxDecoration(
+                                color: i == _photoIdx ? Colors.white : Colors.white38,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          ),
+                      ]),
+                    ),
+                    Positioned.fill(
+                      child: Row(children: [
+                        Expanded(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.translucent,
+                            onTap: () => setState(() => _photoIdx = (_photoIdx - 1).clamp(0, gallery.length - 1)),
+                          ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.translucent,
+                            onTap: () => setState(() => _photoIdx = (_photoIdx + 1).clamp(0, gallery.length - 1)),
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ],
                   Positioned(
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [Colors.black87, Colors.transparent],
+                    child: IgnorePointer(
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [Colors.black87, Colors.transparent],
+                          ),
                         ),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                          Text(age == null ? str(p['name']) : '${str(p['name'])}, $age',
+                              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800)),
+                          if (str(p['bio']).isNotEmpty && str(p['bio']) != 'null')
+                            Text(str(p['bio']), maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white70)),
+                        ]),
                       ),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                        Text(age == null ? str(p['name']) : '${str(p['name'])}, $age',
-                            style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800)),
-                        if (str(p['bio']).isNotEmpty && str(p['bio']) != 'null')
-                          Text(str(p['bio']), maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white70)),
-                      ]),
                     ),
                   ),
                 ]),
               ),
             ),
-            const SizedBox(height: 14),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-              FloatingActionButton(
-                heroTag: 'skip',
-                backgroundColor: Colors.white,
-                onPressed: _busy ? null : () => _act(false),
-                child: const Icon(Icons.close_rounded, color: Colors.red, size: 32),
-              ),
-              FloatingActionButton(
-                heroTag: 'like',
-                backgroundColor: Colors.white,
-                onPressed: _busy ? null : () => _act(true),
-                child: const Icon(Icons.favorite_rounded, color: Colors.pink, size: 30),
-              ),
-            ]),
+          ),
+          const SizedBox(height: 12),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+            _round(Icons.replay_rounded, Colors.amber.shade800, _busy ? null : _rewind, size: 22, tip: 'Undo last skip'),
+            _round(Icons.close_rounded, Colors.red, _busy ? null : () => _act(false), size: 32, tip: 'Skip'),
+            _round(Icons.star_rounded, Colors.blue, _busy || _superLeft <= 0 ? null : () => _act(true, superLike: true),
+                size: 26, tip: 'Super like', badge: '$_superLeft'),
+            _round(Icons.favorite_rounded, Colors.pink, _busy ? null : () => _act(true), size: 30, tip: 'Like'),
+            _round(Icons.bolt_rounded, boostActive ? Colors.grey : Colors.purple, boostActive ? null : _boost,
+                size: 22, tip: boostActive ? 'Boost is on' : 'Boost my profile'),
           ]),
-        ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(remaining == null ? '' : '$remaining profiles left today',
+                style: Theme.of(context).textTheme.bodySmall),
+          ),
+        ]),
       ),
     );
   }
@@ -262,6 +431,7 @@ class _DatingSettingsScreenState extends State<DatingSettingsScreen> {
   DateTime? _dob;
   int _wantGender = 2;
   RangeValues _age = const RangeValues(18, 40);
+  bool _paused = false;
 
   @override
   void initState() {
@@ -272,9 +442,11 @@ class _DatingSettingsScreenState extends State<DatingSettingsScreen> {
   Future<void> _load() async {
     final me = await Api.get('users/profile');
     final pref = await Api.get('datings/preference-profile?expand=preferenceInterest,preferenceLanguage');
+    final st = await Api.get('datings/dating-status');
     if (!mounted) return;
     setState(() {
       _loading = false;
+      if (st.data is Map) _paused = st.data['paused'] == true;
       if (me.data is Map && me.data['user'] is Map) {
         final u = me.data['user'] as Map;
         _myGender = int.tryParse('${u['sex']}') ?? 1;
@@ -355,6 +527,31 @@ class _DatingSettingsScreenState extends State<DatingSettingsScreen> {
                       );
                       if (d != null) setState(() => _dob = d);
                     },
+                  ),
+                  const Divider(height: 32),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Pause my dating profile'),
+                    subtitle: const Text('Hide me from everyone until you turn it back on'),
+                    value: _paused,
+                    onChanged: (v) async {
+                      setState(() => _paused = v);
+                      final r = await Api.post('datings/pause', {'paused': v ? '1' : '0'});
+                      if (!mounted) return;
+                      if (!r.ok) {
+                        setState(() => _paused = !v);
+                        toast(context, r.message.isEmpty ? 'Failed' : r.message);
+                      }
+                    },
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.workspace_premium_outlined),
+                    title: const Text('Dating plans'),
+                    subtitle: const Text('See more profiles every day'),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => Navigator.of(context)
+                        .push(MaterialPageRoute(builder: (_) => const DatingPlansScreen())),
                   ),
                   const Divider(height: 32),
                   const Text('I want to meet', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
