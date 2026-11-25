@@ -4,7 +4,9 @@ import '../api.dart';
 import '../app_only.dart';
 import '../widgets.dart';
 import 'paged_list.dart';
+import 'payout_methods_screen.dart';
 import 'watch_earn_screen.dart';
+import 'withdraw_screen.dart';
 
 String _money(dynamic v) => '\$${(double.tryParse('$v') ?? 0).toStringAsFixed(2)}';
 
@@ -66,6 +68,15 @@ String _date(dynamic v) {
   return DateFormat('d MMM yyyy').format(DateTime.fromMillisecondsSinceEpoch(n * 1000));
 }
 
+/// "· 1,200 BDT" for withdrawals made with the new method list; empty for old ones.
+String _receiveNote(Map p) {
+  final cc = '${p['currency_code'] ?? ''}'.replaceAll('null', '');
+  final nl = '${p['net_local'] ?? ''}'.replaceAll('null', '');
+  if (cc.isEmpty || nl.isEmpty) return '';
+  final v = double.tryParse(nl);
+  return ' · ${v == null ? nl : v.toString().replaceAll(RegExp(r'\.0+$'), '')} $cc';
+}
+
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
 
@@ -77,7 +88,6 @@ class _WalletScreenState extends State<WalletScreen> {
   bool _loading = true;
   int _coins = 0;
   double _balance = 0;
-  String _paypal = '';
   double _perCoin = 0;
   int _minRedeem = 0;
   int _viewCoins = 0;
@@ -99,7 +109,6 @@ class _WalletScreenState extends State<WalletScreen> {
         final u = me.data['user'] as Map;
         _coins = int.tryParse('${u['available_coin']}') ?? 0;
         _balance = double.tryParse('${u['available_balance']}') ?? 0;
-        _paypal = '${u['paypal_id'] ?? ''}'.replaceAll('null', '');
       }
       if (st.data is Map && st.data['setting'] is Map) {
         final s = st.data['setting'] as Map;
@@ -148,52 +157,14 @@ class _WalletScreenState extends State<WalletScreen> {
     if (r.ok) _load();
   }
 
-  Future<void> _editPaypal() async {
-    final ctrl = TextEditingController(text: _paypal);
-    final v = await showDialog<String>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('PayPal email'),
-        content: TextField(
-          controller: ctrl,
-          keyboardType: TextInputType.emailAddress,
-          decoration: const InputDecoration(labelText: 'PayPal email for payouts'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(c, ctrl.text.trim()), child: const Text('Save')),
-        ],
-      ),
-    );
-    ctrl.dispose();
-    if (v == null || v.isEmpty) return;
-    final r = await Api.post('users/update-payment-detail', {'paypal_id': v});
-    if (!mounted) return;
-    toast(context, r.ok ? 'Saved' : (r.message.isEmpty ? 'Could not save' : r.message));
-    if (r.ok) _load();
+  Future<void> _openWithdraw() async {
+    final r = await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => const WithdrawScreen()));
+    if (r == true) _load();
   }
 
-  Future<void> _withdraw() async {
-    if (_paypal.isEmpty) {
-      toast(context, 'Add your PayPal email first');
-      return _editPaypal();
-    }
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Request withdrawal'),
-        content: Text('Withdraw ${_money(_balance)} to $_paypal?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Withdraw')),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    final r = await Api.post('payments/withdrawal', {});
-    if (!mounted) return;
-    toast(context, r.ok ? 'Request sent. We will review it.' : (r.message.isEmpty ? 'Could not send the request' : r.message));
-    if (r.ok) _load();
+  Future<void> _openPayout() async {
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PayoutMethodsScreen()));
+    if (mounted) _load();
   }
 
   @override
@@ -247,17 +218,17 @@ class _WalletScreenState extends State<WalletScreen> {
                             ListTile(
                               leading: const Icon(Icons.payments_outlined),
                               title: const Text('Withdraw money'),
-                              subtitle: Text(_paypal.isEmpty ? 'Add your PayPal email first' : 'To $_paypal'),
+                              subtitle: const Text('Choose an amount and how to receive it'),
                               trailing: const Icon(Icons.chevron_right_rounded),
-                              onTap: _withdraw,
+                              onTap: _openWithdraw,
                             ),
                             const Divider(),
                             ListTile(
-                              leading: const Icon(Icons.alternate_email_rounded),
-                              title: const Text('PayPal email'),
-                              subtitle: Text(_paypal.isEmpty ? 'Not set' : _paypal),
-                              trailing: const Icon(Icons.edit_outlined),
-                              onTap: _editPaypal,
+                              leading: const Icon(Icons.account_balance_outlined),
+                              title: const Text('Payout methods'),
+                              subtitle: const Text('PayPal, bKash, Nagad, USDT, Binance'),
+                              trailing: const Icon(Icons.chevron_right_rounded),
+                              onTap: _openPayout,
                             ),
                           ]),
                         ),
@@ -306,7 +277,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       child: ListTile(
                         leading: const Icon(Icons.payments_outlined),
                         title: Text(_money(p['amount'])),
-                        subtitle: Text(_date(p['created_at'])),
+                        subtitle: Text(_date(p['created_at']) + _receiveNote(p)),
                         trailing: Chip(
                           label: Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700)),
                           visualDensity: VisualDensity.compact,

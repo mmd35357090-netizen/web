@@ -1,29 +1,28 @@
-# ওয়েব ক্যাচ-আপ (স্টেজ ২৮-এর পরের সব ওয়েব আপডেট একসাথে)
+# ওয়েব ধাপ ২: শেয়ার লিংক (সার্ভারের নতুন username লিংক)
 
-এতে web_stage28b, web_stage29, web_header, web_logo, web_fix2, web_video_fix —
-এই ছয়টার প্রতিটা ফাইলের **সর্বশেষ সংস্করণ** আছে। আলাদা ক্রমে বসাতে হবে না।
-কিছু আগে বসানো থাকলেও ক্ষতি নেই (ফলাফল একই)।
+## আগে কী ছিল
+ওয়েবের Share / Copy link বাটন নিজের `…/#/post/<id>` লিংক বানাত। তাতে WhatsApp/Messenger-এ
+পোস্টের ছবি-লেখার প্রিভিউ আসত না, আর অ্যাপ থাকলেও অ্যাপ খুলত না।
 
-## বসাও (ওয়েব রিপোতে, একই পথে, সব ফাইল ওভাররাইট)
-- lib/endpoints.dart
-- lib/post_video.dart (নতুন)
-- lib/video_frame.dart
-- lib/screens/create_post_screen.dart
-- lib/screens/feed_screen.dart
-- lib/screens/home_shell.dart
-- lib/screens/login_screen.dart
-- lib/screens/post_card.dart
-- lib/screens/profile_screen.dart
-- web/index.html
-- web/favicon.png
-- web/icons/ (৫টা আইকন)
+## এখন কী হবে
+শেয়ার/কপি করলে সার্ভারের লিংক যাবে: `https://connecttofriends.com/<username>/p|video|reel/<id>`
+- WhatsApp/Messenger/Telegram-এ ওই পোস্টের ছবি + লেখার প্রিভিউ
+- যার ফোনে অ্যাপ আছে: লিংক ট্যাপে অ্যাপে সরাসরি পোস্ট খোলে
+- অ্যাপ নেই: ডাউনলোডের কথা + "Continue on website"
+- কম্পিউটার/iPhone: সরাসরি ওয়েবে পোস্ট (`/#/p/<id>`)
+সার্ভার লিংক না দিলে আগের লিংকই কাজ করে (কিছু ভাঙবে না)।
 
-কোনো pubspec বদল লাগে না।
+## বসাও (ওয়েব রিপোতে, একই পথে)
+- lib/share_registry.dart  (নতুন)
+- lib/models.dart          (বদলানো: ২ লাইন)
+- lib/links.dart           (বদলানো: ২ লাইন)
 
-## তারপর
-git diff দেখো → push → GitHub Actions build → ব্রাউজারে Ctrl+Shift+R বা Incognito।
-Build ফেল করলে লাল error লাইন পাঠাও।
+web_catchup বা ধাপ ১-এর ফাইলের সাথে কোনো মিল নেই। pubspec বদল লাগে না।
+এটা কাজ করার জন্য সার্ভারে আগের share লিংক সেটআপ (proxy.conf, ShareController) চালু থাকতে হবে — সেটা এখন চালু আছে।
 
-## কী পাবে
-Android-এর মতো হেডার ও All/Following/Videos/Premium চিপ, লোগো/আইকন, প্রোফাইল একসাথে স্ক্রল,
-ভিডিওতে ট্যাপে প্লে/পজ + সাউন্ড বাটন, ফিডে সব পোস্ট (এডমিনের পোস্টসহ), ব্রাউজার বারের রং।
+## পরীক্ষা
+1. build → Incognito → একটা পোস্টে Share (বা Copy link)।
+2. লিংক দেখতে `connecttofriends.com/<username>/p/<id>` ধরনের হবে (`#/post/` নয়)।
+3. WhatsApp/Messenger-এ পেস্ট করে প্রিভিউ দেখো; ফোনে ট্যাপ করে অ্যাপ খোলে কিনা দেখো।
+
+বাদ: প্রোফাইল ও হ্যাশট্যাগ শেয়ার এখনো পুরনো লিংকে (সার্ভারে এগুলোর জন্য username লিংক নেই)।

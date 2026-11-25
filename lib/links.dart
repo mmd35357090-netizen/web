@@ -5,6 +5,7 @@ import 'package:web/web.dart' as web;
 import 'screens/hashtag_screen.dart';
 import 'screens/post_detail_screen.dart';
 import 'screens/profile_screen.dart';
+import 'share_registry.dart';
 import 'widgets.dart';
 
 @JS('cfgShare')
@@ -14,7 +15,9 @@ external JSPromise<JSBoolean> _cfgShare(JSString url, JSString title, JSString t
 class AppLinks {
   static String _origin() => '${web.window.location.origin}${web.window.location.pathname}';
 
-  static String post(int id) => '${_origin()}#/post/$id';
+  /// The server's own link for this post (username link with preview + app opening) when we have it,
+  /// otherwise a plain website link.
+  static String post(int id) => ShareRegistry.of(id) ?? '${_origin()}#/post/$id';
   static String user(int id) => '${_origin()}#/user/$id';
   static String tag(String t) => '${_origin()}#/tag/${Uri.encodeComponent(t.replaceFirst('#', ''))}';
 

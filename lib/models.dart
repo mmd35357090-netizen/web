@@ -1,3 +1,5 @@
+import 'share_registry.dart';
+
 int _i(dynamic v, [int d = 0]) {
   if (v == null) return d;
   if (v is int) return v;
@@ -101,6 +103,7 @@ class AppPost {
     p.contentType = _i(j['post_content_type'], 1);
     p.createdAt = _i(j['created_at']);
     p.shareLink = j['share_link']?.toString();
+    ShareRegistry.remember(p.id, p.shareLink);
     final g = j['postGallary'];
     if (g is List) {
       p.media = g.map((x) => Media.fromJson(x)).where((m) => m.url.isNotEmpty).toList();
