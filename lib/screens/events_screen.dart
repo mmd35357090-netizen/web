@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'buy_ticket_screen.dart';
 import '../app_only.dart';
 import 'package:intl/intl.dart';
 import '../api.dart';
@@ -42,7 +43,7 @@ class EventItem {
     if (t is List) {
       for (final x in t) {
         if (x is Map) {
-          e.tickets.add({'name': '${x['ticket_type']}', 'price': '${x['price']}', 'left': '${x['available_ticket'] ?? ''}'});
+          e.tickets.add({'id': '${x['id']}', 'name': '${x['ticket_type']}', 'price': '${x['price']}', 'left': '${x['available_ticket'] ?? ''}'});
         }
       }
     }
@@ -268,7 +269,13 @@ class EventDetailScreen extends StatelessWidget {
                       trailing: Text(t['price'] ?? '', style: const TextStyle(fontWeight: FontWeight.w700)),
                     ),
                 const SizedBox(height: 10),
-                const AppOnlyNote('Booking tickets works in the mobile app. Your tickets appear under "My tickets" here too.'),
+                if (!e.ended && e.tickets.isNotEmpty)
+                  FilledButton.icon(
+                    onPressed: () => Navigator.of(context)
+                        .push(MaterialPageRoute(builder: (_) => BuyTicketScreen(event: e))),
+                    icon: const Icon(Icons.confirmation_number_rounded),
+                    label: const Text('Buy ticket'),
+                  ),
                 if (e.disclaimer.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Text(e.disclaimer, style: const TextStyle(color: Colors.black45, fontSize: 12)),

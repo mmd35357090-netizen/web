@@ -1,4 +1,5 @@
-# Web Step 6 — Events
-Install: lib/screens/events_screen.dart (replace)
-Notun: Free/Paid/Ended chip, ticket-e "N left"/"Sold out", "My tickets" (Upcoming/Past, read-only).
-Ticket kena Android app-e thakbe (web-e na — karon).
+# Web Step 8 — Ticket kena (wallet diye)
+ATOGE server patch (patch_ticket_price.py) bosao, tarpor web file bosao.
+Install: lib/screens/buy_ticket_screen.dart (new), lib/screens/events_screen.dart (replace; Step 6 er upor)
+Feature: ticket type, quantity, coupon, wallet balance check, confirm, "My tickets"-e niye jay.
+Service fee web-e nei (server dhorto na).

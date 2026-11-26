@@ -96,7 +96,6 @@ class _DatingPlansScreenState extends State<DatingPlansScreen> {
                       },
                     ),
                   ),
-                ),
-    );
+                );
   }
 }

@@ -23,7 +23,7 @@ class DatingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Dating'),
@@ -35,7 +35,7 @@ class DatingScreen extends StatelessWidget {
                   .push(MaterialPageRoute(builder: (_) => const DatingSettingsScreen())),
             ),
           ],
-          bottom: const TabBar(tabs: [Tab(text: 'Discover'), Tab(text: 'Matches'), Tab(text: 'Likes you')]),
+          bottom: const TabBar(isScrollable: true, tabAlignment: TabAlignment.start, tabs: [Tab(text: 'Discover'), Tab(text: 'Matches'), Tab(text: 'Likes you'), Tab(text: 'I liked')]),
         ),
         body: const TabBarView(children: [
           _Discover(),
@@ -45,6 +45,12 @@ class DatingScreen extends StatelessWidget {
               listKey: 'profileLikeByOtherUsers',
               nested: false,
               empty: 'Nobody has liked you yet'),
+          _SimpleList(
+              path: 'datings/profile-like-lists',
+              listKey: 'userMatch',
+              nested: true,
+              empty: 'You have not liked anyone yet',
+              undo: true),
         ]),
       ),
     );
@@ -361,7 +367,8 @@ class _SimpleList extends StatefulWidget {
   final String listKey;
   final bool nested; // response is {key: {items: []}}
   final String empty;
-  const _SimpleList({required this.path, required this.listKey, required this.nested, required this.empty});
+  final bool undo; // show an 'Undo like' button
+  const _SimpleList({required this.path, required this.listKey, required this.nested, required this.empty, this.undo = false});
 
   @override
   State<_SimpleList> createState() => _SimpleListState();
@@ -385,6 +392,30 @@ class _SimpleListState extends State<_SimpleList> {
     });
   }
 
+  Future<void> _undo(int index) async {
+    final u = _items[index];
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Undo like?'),
+        content: Text('Remove your like from ${str(u['name'])}? They may show up in Discover again.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Undo like')),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final r = await Api.post('datings/profile-action-remove', {'profile_user_id': '${u['id']}'});
+    if (!mounted) return;
+    if (r.ok) {
+      setState(() => _items.removeAt(index));
+      toast(context, 'Like removed');
+    } else {
+      toast(context, r.message.isEmpty ? 'Could not undo' : r.message);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator());
@@ -405,6 +436,13 @@ class _SimpleListState extends State<_SimpleList> {
                 leading: Avatar(u),
                 title: Text(age == null ? u.displayName : '${u.displayName}, $age'),
                 subtitle: Text('@${u.username}'),
+                trailing: widget.undo
+                    ? TextButton.icon(
+                        onPressed: () => _undo(i),
+                        icon: const Icon(Icons.heart_broken_outlined, size: 18),
+                        label: const Text('Undo'),
+                      )
+                    : null,
                 onTap: () => Navigator.of(c)
                     .push(MaterialPageRoute(builder: (_) => ProfileScreen(userId: u.id))),
               ),
