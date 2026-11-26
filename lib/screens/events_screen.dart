@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'buy_ticket_screen.dart';
-import '../app_only.dart';
 import 'package:intl/intl.dart';
 import '../api.dart';
 import '../widgets.dart';

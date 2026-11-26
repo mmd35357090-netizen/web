@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../api.dart';
 import '../widgets.dart';
 import 'events_screen.dart';
-import 'paged_list.dart';
 
 /// Buy tickets with the wallet balance. The server recalculates the price,
 /// so what is shown here is only a preview.
